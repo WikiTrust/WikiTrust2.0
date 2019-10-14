@@ -1,0 +1,3 @@
+[submodule "data_interface/pydal"]
+	path = data_interface/pydal
+	url = git@github.com:web2py/pydal.git
