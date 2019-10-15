@@ -59,7 +59,7 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         Field('reputation', 'double'),
     )
 
-    
+
 
 
 
