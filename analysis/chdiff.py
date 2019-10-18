@@ -83,7 +83,7 @@ def make_index2 (words):
             index [(words[i], words[i+1])] = [i]
     # Now chops index entries with too many matches.
     todel = []
-    for (wp, l) in index.iteritems ():
+    for (wp, l) in index.items ():
         if len(l) > max_matches:
             todel.append (wp)
     for wp in todel:
@@ -103,7 +103,7 @@ def make_index3 (words):
             index [(words[i], words[i+1], words[i+2])] = [i]
     # Now chops index entries with too many matches.
     todel = []
-    for (wp, l) in index.iteritems ():
+    for (wp, l) in index.items ():
         if len(l) > max_matches:
             todel.append (wp)
     for wp in todel:
@@ -122,7 +122,7 @@ def make_index4 (words):
             index [(words[i], words[i+1], words[i+2], words[i+3])] = [i]
     # Now chops index entries with too many matches.
     todel = []
-    for (wp, l) in index.iteritems ():
+    for (wp, l) in index.items ():
         if len(l) > max_matches:
             todel.append (wp)
     for wp in todel:
@@ -479,7 +479,7 @@ class TestDiffsGreedy(unittest.TestCase):
         s2 = "A me piace la pasta al pomodoro con il parmigiano sopra"
         r = test_greedy(s1, s2)
         x, w, y = fast_compute_edit_list(s1.split(), s2.split())
-        self.assertItemsEqual(r, [x] + w + [y])
+        self.assertCountEqual(r, [x] + w + [y])
 
 class TestDiffsTichy(unittest.TestCase):
 
@@ -513,22 +513,21 @@ class TestDiffsTichy(unittest.TestCase):
         s2 = "a me piacciono me piacciono le banane"
         r = test_tichy(s1, s2)
         x, w, y = fast_compute_edit_list(s1.split(), s2.split())
-        self.assertItemsEqual(r, [x] + w + [y])
+        self.assertCountEqual(r, [x] + w + [y])
 
     def test5(self):
         s1 = "A me piace la pasta alla matriciana ma zenza parmigiano sopra"
         s2 = "A me piace la pasta al pomodoro con il parmigiano sopra"
         r = test_tichy(s1, s2)
         x, w, y = fast_compute_edit_list(s1.split(), s2.split())
-        self.assertItemsEqual(r, [x] + w + [y])
+        self.assertCountEqual(r, [x] + w + [y])
 
     def test6(self):
         s1 = "a b c d h a b c d e a b c d a b c d"
         s2 = "a b c d a b c d"
         x, w, y = fast_compute_edit_list(s1.split(), s2.split())
-        self.assertItemsEqual([(0, 0, 0, 4), (2, 4, 4, 10), (0, 14, 4, 4)], [x] + w + [y])
+        self.assertCountEqual([(0, 0, 0, 4), (2, 4, 4, 10), (0, 14, 4, 4)], [x] + w + [y])
 
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
     unittest.main()
-
