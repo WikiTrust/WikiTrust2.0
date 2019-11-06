@@ -36,6 +36,8 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
     db.define_table(
         'revision',
         Field('rev_id', 'integer'),
+        # In which block it is.
+        Field('block_id', 'reference revision_block'),
         # user id on the wikipedia for this user.
         Field('user_id', 'integer'),
         Field('rev_date', 'datetime'),
@@ -59,6 +61,25 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         Field('reputation', 'double'),
     )
 
+    db.define_table(
+        'revision_block',
+        Field('page_id', 'reference page'),
+        # These fields are used to know in which order to stitch blocks
+        # together, and also, if there are holes between them.
+        # Id of the last revision before the block
+        Field('prev_revision_id', 'integer'), # long??
+        Field('next_revision_id', 'integer'),
+        # To put blocks in chronological order by page.
+        Field('initial_timestamp', 'datetime'),
+        Field('storage_id'), # ID for S3 / GCS
+    )
+
+    db.define_table(
+        'user_reputation',
+        Field('user_id', 'reference user'),
+        Field('block_id', 'reference revision_block'),
+        Field('amount', 'double'),
+    )
 
 
 
