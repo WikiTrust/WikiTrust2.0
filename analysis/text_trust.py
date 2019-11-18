@@ -7,6 +7,8 @@ text trust.
 Eric Vin, 2019
 """
 
+import math
+
 from typing import List, Tuple
 
 from chdiff import test_tichy, test_greedy, print_edit_diff
@@ -16,23 +18,27 @@ class Word:
     Class representing a word and its associated trust value
     """
 
-    def __init__(self, text: str, trust: int) -> None:
+    def __init__(self, text: str, trust: float) -> None:
         """
         Word Constructor:
             -text: The text present in the word
-            -trust: The trust value associated with this word
+            -trust: The trust value associated with this word. Set to
+                1 if trust for word does not exist in previous version.
+                Otherwise starts as trust of word in previous version
+                and is modified to trust of current version by parent
+                Version class.
         """
         self.text: str = text
-        self.trust: int = trust
+        self.trust: float = trust
 
     def __str__(self) -> str:
         """
         Returns a string interpretation of this Word
         """
-        return "(%s,%d)" % (self.text, self.trust)
+        return "(%s,%.2f)" % (self.text, self.trust)
 
     @classmethod
-    def create_list_words(cls, text_list: List[str], trust_list: List[int]) -> List["Word"]:
+    def create_list_words(cls, text_list: List[str], trust_list: List[float]) -> List["Word"]:
         """
         Returns a list of Word objects containing text from text_list and trust from
         trust_list. Essentially zips together the two lists.
@@ -51,6 +57,12 @@ class Word:
             words_list.append(Word(text_list[list_iter], trust_list[list_iter]))
 
         return words_list
+
+    def clone(self) -> "Word":
+        """
+        Returns a deep copy of the word object.
+        """
+        return Word(self.text, self.trust)
 
 class Edit:
     """
@@ -142,32 +154,132 @@ class Block:
         edit_print: str = str(self.edit)
         words_print: str = "".join([str(word) for word in self.words])
 
-        return "Edit Type: %s\nWords: %s" % (edit_print, words_print)
+        return "Edit Type: %s\nWords: %s\nLeft Bound Change: %s  Right Bound Change: %s"\
+        % (edit_print, words_print, self.left_bound_change, self.right_bound_change)
 
 class Version:
     """
     Class representing one version of an article at a certain point in time.
     """
 
-    def __init__(self, word_list: List[Word], edit_list: List[Edit]) -> None:
+    def __init__(self, word_list: List[Word], edit_list: List[Edit], author_rep: float,\
+        trust_inheritance_const: float, revision_const: float, edge_effect_const: float) -> None:
         """
         Version Constructor:
             -words: A list of Words present in this Version
             -edit_list: A list of Edits that map the previous Version
                 to this Version.
+            -author_rep: The reputation of the author who made the
+                edits in edit_list
+            -trust_inheritance_const: Trust inheritance constant
+            -revision_const: Revision constant
+            -edge_effect_const: Edge effect constant
+
+            **NOTE**
+            This constructor should only be used by the factory methods create_initial_version
+            and create_next_version.
         """
 
         #A list of words present in this Version
-        self.word_list: List[Word] = word_list
+        self.word_list: List[Word] = word_list #Word.create_list_words(word_list, [initial_trust for x in range(len(word_list))])
 
         #A list of edits that brought the previous version to the current version
         self.edit_list: List[Edit] = edit_list
 
+        #The reputation of the author who made the edits in edit_list
+        self.author_rep: float = author_rep
+
+        #The constants used in trust calculations
+        self.trust_inheritance_const: float = trust_inheritance_const
+        self.revision_const: float = revision_const
+        self.edge_effect_const: float = edge_effect_const
+
         #A list of blocks contained in this version
         self.block_list: List[Block] = self.compute_blocks()
 
-        #Checks if bounds of blocks have changed contexts
+        #Calculates the trust of all inserted blocks
+        self.apply_insertion_trust()
+
+        #Checks if bounds of any blocks have changed contexts
         self.check_block_bound_changes()
+
+        #Applies the edge effect to all block bounds that have changed context
+        self.apply_edge_effect()
+
+        #Applies the revision effect to all words
+        self.apply_revision_effect()
+
+    @classmethod
+    def create_initial_version(cls, text_list: List[str], initial_trust: float,\
+        trust_inheritance_const: float, revision_const: float, edge_effect_const: float) -> "Version":
+        """
+        This is a factory method to create an initial Version of a page
+        given a starting list of words. This is structured as an insertion
+        containing all words in a word_list with the author reputation
+        being the initial_trust passed.
+
+        create_initial_version Parameters:
+            -text_list: A list of strings representing all words in this Version.
+            -initial_trust: A float representing the initial trust for all words
+                in this Version.
+            -trust_inheritance_const: Trust inheritance constant
+            -revision_const: Revision constant
+            -edge_effect_const: Edge effect constant
+        """
+
+        #Creates list of Word objects all with trust equal to initial_trust.
+        word_list: List[Word] = Word.create_list_words(text_list,\
+                                [initial_trust for x in range(len(text_list))])
+
+        #Creates edit_list with one edit: A move of all text in text_list from
+        #zero to zero
+        edit_list = [Edit(Edit.MOVE, 0, 0, len(word_list))]
+
+        return cls(word_list, edit_list, initial_trust,\
+                trust_inheritance_const, revision_const, edge_effect_const)
+
+    @classmethod
+    def create_next_version(cls, prev_version: "Version", new_text: List[str], new_edits: List[Edit], author_rep: float) -> "Version":
+        """
+        This is a factory method to create and return the next Version, given a previous
+        Version, a list of edits applied to that previous Version and the words present in
+        the next version.
+
+        create_next_version Parameters:
+            -prev_version: The version immediately before the new version being generated
+                by this method.
+            -new_text: A list of strings representing all words in the the new version.
+            -new_edits: A list of edits mapping the old version to the new version.
+            -author_rep: The reputation of the author making the edits in this new version.
+        """
+
+        #Creates reference to Word list of previous version.
+        prev_word_list: List[Word] = prev_version.word_list
+
+        #Creates new Word list based off new_text. All trusts are set
+        #to -1 initially to help detect if a word's trust is not properly
+        #set later. (Trust should never be negative after object construction
+        #is finished)
+        new_word_list: List[Word] = Word.create_list_words(new_text,\
+                                    [-1 for x in range(len(new_text))])
+
+        #Copies trust from words involved in moves.
+        #They assume the same trust they had in the previous version
+        for edit in edit_list:
+            #Only applies copy if edit is a move
+            if edit.edit_type == Edit.MOVE:
+                #Copies over a clone of all words in move from edit origin
+                #in prev_word_list to edit destination in new_word_list,
+                #scaled by word_iter
+                for word_iter in range(edit.length):
+                    new_word_list[edit.destination+word_iter] = prev_word_list[edit.origin+word_iter].clone()
+
+
+        #Creates and returns the next version
+        return cls(new_word_list, new_edits, author_rep,\
+                    prev_version.trust_inheritance_const, prev_version.revision_const, prev_version.edge_effect_const)
+
+
 
     def compute_blocks(self) -> List[Block]:
         """
@@ -194,60 +306,138 @@ class Version:
 
         return version_blocks
 
+    def apply_insertion_trust(self) -> None:
+        """
+        Applies the trust calculations for an insertion to all insertion blocks
+        in this version.
+        """
+        #Iterates through every block in this version
+        for block in self.block_list:
+            #Checks if this block is an insertion
+            if block.edit.edit_type == Edit.INSERT:
+                #This block is an insertion, so we apply the insertion trust formula
+                #to each word in it
+                for word in block.words:
+                    word.trust = (self.author_rep * self.trust_inheritance_const)
+
+
     def check_block_bound_changes(self) -> None:
         """
         Iterates through every block in the block_list to check if their bounds
-        have changed context
+        have changed context.
+
+        Current implementation conforms to "Assigning Trust to Wikipedia Content"
+        model. ALL Moves have the edge effect applied to them with two exceptions:
+
+            -If the Move starts at the beginning of the article both before and after
+             the edit, then the left bound does not change context.
+            -If the Move ends at the end of the article both before and after the edit,
+             then the right bound does not change context.
         """
         for block in self.block_list:
+            #Checks if block edit type is move
+            if block.edit.edit_type == Edit.MOVE:
+                #Checks if left bound has changed context
+                if (block.edit.origin == block.edit.destination) and (block.edit.destination == 0):
+                    block.left_bound_change = False
+                else:
+                    block.left_bound_change = True
 
+                #Checks if right bound has changed context
+                if (block.edit.origin == block.edit.destination) and (block.edit.destination == len(self.word_list)-block.edit.length):
+                    block.right_bound_change = False
+                else:
+                    block.right_bound_change = True
 
-            #Checks to see if left bound is at start of word_list, or right bound
-            #is at end of word_list. In either case, that respective bound does
-            #NOT change context.
-            if block.edit.destination == 0:
-                #Left bound is at the start of the word_list, therefore
-                #no change of context at left bound.
-                block.left_bound_change = False
-            if block.edit.destination + block.edit.length == len(self.word_list):
-                #Right bound is at the end of the word_list, therefore
-                #no change of context at right bound.
-                block.right_bound_change = False
+    def apply_edge_effect(self) -> None:
+        """
+        Applies the edge effect to all block bounds marked as changed by the
+        check_block_bound_changes function
+        """
+        for block in self.block_list:
+            #Applies left edge effect if appropriate
+            if block.left_bound_change:
+                for word_iter, word in enumerate(block.words):
+                    #Use k to remain consistent with paper's formula
+                    k: int = word_iter
+
+                    #Compute new trust for Word
+                    new_word_trust_left: float = word.trust + \
+                    ((self.trust_inheritance_const * self.author_rep - word.trust) * \
+                    math.exp((-self.edge_effect_const) * k))
+
+                    #Replace old Word trust with new Word trust
+                    word.trust = new_word_trust_left
+            if block.right_bound_change:
+                for word_iter, word in enumerate(block.words):
+                    #Use k_bar to remain consistent with paper's formula
+                    k_bar: int = len(block.words) - word_iter -1
+
+                    #Compute new trust for Word
+                    new_word_trust_right: float = word.trust + \
+                    ((self.trust_inheritance_const * self.author_rep - word.trust) * \
+                    math.exp((-self.edge_effect_const) * k_bar))
+
+                    #Replace old Word trust with new Word trust
+                    word.trust = new_word_trust_right
+
+    def apply_revision_effect(self) -> None:
+        """
+        Applies the revision effect to all words in this version
+        """
+        for word in self.word_list:
+            if word.trust < self.author_rep:
+                word.trust = word.trust + ((self.author_rep - word.trust) * self.revision_const)
 
 if __name__ == '__main__':
-    s1 = "the quick brown fox jumps over the lazy dog"
-    s2 = "the lazy fox jumps over the quick brown dog"
+    initial_trust = 1
 
-    print("String 1: %s" % (s1))
-    print("String 2: %s" % (s2))
+    test_strings = []
+    test_strings.append("the quick brown fox jumps over the lazy dog")
+    test_strings.append("foo the quick brown fox jumps over the lazy dog bar")
+    test_strings.append("the quick brown fox jumps over the lazy dog")
+    test_strings.append("the lazy fox jumps over the quick brown dog")
+    test_strings.append("the lazy fox jumps over the quick brown dog and also other stuff")
 
+    test_trusts = [10, 7, 10, 20]
+
+    trust_inheritance_const = 0.5
+    revision_const = 0.1
+    edge_effect_const = 2
+
+    print("Initial String: " + str(test_strings[0]))
+
+    for string_iter, string in enumerate(test_strings):
+        print("String %d: %s" %(string_iter, string))
     print()
 
-    diff_list = test_tichy("the quick brown fox jumps over the lazy dog", "the lazy fox jumps over the quick brown dog")
+    print("Version 1:\n")
+    print("Initial Trust: " + str(initial_trust) + "\n")
 
-    print("Differences:")
+    text_list = test_strings[0].split()
 
-    print(diff_list)
-    print_edit_diff(diff_list)
+    #ver = Version(word_list, edit_list, author_reputation, initial_trust, trust_inheritance_const, revision_const, edge_effect_const)
+    ver = Version.create_initial_version(text_list, initial_trust, trust_inheritance_const, revision_const, edge_effect_const)
 
-    print()
-
-    word_list = Word.create_list_words(s2.split(), [1 for x in range(len(s2.split()))])
-    edit_list = [Edit.edit_tuple_constructor(edit) for edit in diff_list]
-
-    print("Word List:")
-    for word in word_list:
-        print(str(word))
-
-    print()
-
-    print("Edit List:")
-    for edit in edit_list:
-        print(str(edit))
-
-    print()
-
-    ver = Version(word_list, edit_list)
+    print("".join([str(word) for word in ver.word_list]) + "\n")
 
     print("Block List:")
     print("".join([str(block) + "\n" for block in ver.block_list]))
+
+    print("\n")
+
+    for string_iter in range(len(test_strings)-1):
+        print("Version %d:\n" % (string_iter + 2))
+        print("Author Reputation: %d\n" % (test_trusts[string_iter]))
+
+        diff_list = test_tichy(test_strings[string_iter], test_strings[string_iter + 1])
+        edit_list = [Edit.edit_tuple_constructor(edit) for edit in diff_list]
+        text_list = test_strings[string_iter+1].split()
+
+        ver = Version.create_next_version(ver, text_list, edit_list, test_trusts[string_iter])
+
+        print("".join([str(word) for word in ver.word_list]) + "\n")
+
+        print("Block List:\n")
+        print("".join([str(block) + "\n" for block in ver.block_list]))
+        print("\n")
