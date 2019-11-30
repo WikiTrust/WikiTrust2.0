@@ -1,6 +1,6 @@
-from edit import Edit
-from author import Author
-from ..chdiff import edit_diff_greedy, make_index2
+from .edit import Edit
+from .author import Author
+from .chdiff import edit_diff_greedy, make_index2
 
 class Article:
     def __init__(self, max_judgement_dist, scaling_constant, scaling_function):
@@ -17,7 +17,7 @@ class Article:
         #of this new version
 
         #Gets the range for the reference versions
-        reference_version_range = range(len(self.versions)-self.max_judgement_dist-1, len(self.versions)-1)
+        reference_version_range = range(max(len(self.versions)-self.max_judgement_dist-1, 0), len(self.versions)-1)
 
         #Goes through every version being judged
         for reference_version_iter in reference_version_range:
@@ -32,7 +32,7 @@ class Article:
                 pass
             else:
                 #Authors are different. Change reputation of judged_version author
-                
+
                 #Computes reputation change to be applied to new_version's author
                 reputation_change = self.scaling_constant\
                                     * self.compute_edit_distance(reference_version, judged_version)\
@@ -40,13 +40,13 @@ class Article:
                                     * self.scaling_function(new_version.author.get_author_rep())
 
                 #Applies reputation change
-                judged_version.author.set_author_rep(judged_version.get_author_rep() + reputation_change)
+                judged_version.author.set_author_rep(judged_version.author.get_author_rep() + reputation_change)
 
     @classmethod
     def compute_edit_distance(cls, version_1, version_2):
         #Gets list of tuples representings edits
-        split_version_1 = version_1.split()
-        split_version_2 = version_2.split()
+        split_version_1 = version_1.text.split()
+        split_version_2 = version_2.text.split()
         edit_index = make_index2(split_version_2)
         edit_list_tuples = edit_diff_greedy(split_version_1, split_version_2, edit_index)
 
@@ -69,13 +69,13 @@ class Article:
         move_total = 0
 
         #Creates a list of all move edits in edit_list
-        move_list = [edit for edit in edit_list if edit.type == Edit.MOVE]
+        move_list = [edit for edit in edit_list if edit.edit_type == Edit.MOVE]
 
         #Sorts move_list by the origin of the moves in ascending order
         moves_origin_list = sorted(move_list, key=lambda edit: edit.origin)
 
         #Sorts move_list by the destination of the moves in descending order
-        moves_destination_list = sorted(move_list, key=lambda edit: edit.destination).reverse()
+        moves_destination_list = sorted(move_list, key=lambda edit: edit.destination)[::-1]
 
         #Now we compute two groups of pairs of moves. Assume a pair consists of (Move a, Move b).
         #These groups are origin valid pairs and destination valid pairs respectively.
