@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     test_article = Article(max_judgement_dist, scaling_constant, scaling_function)
 
-    for x in range(4):
+    for x in range(3):
         for version_iter, version in enumerate(test_versions):
             print("Loop %d:\n" % version_iter)
 
