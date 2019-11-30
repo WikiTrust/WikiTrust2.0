@@ -8,7 +8,7 @@ from typing import Tuple
 
 class Edit:
     """
-    Class representing an edit in a version's edit list
+    Class representing an edit, i.e. a change from one version to the next. 
     """
 
     #Constants describing edit type

@@ -1,15 +1,39 @@
+"""
+Module containing Article class. Part of the author_reputation package.
+
+Eric Vin, 2019
+"""
+
 from .edit import Edit
 from .author import Author
 from .chdiff import edit_diff_greedy, make_index2
 
 class Article:
+    """
+    Class representing an article, containing all previous versions of that article.
+    Also contains certain constants/parameters for reputation generation.
+    """
+
     def __init__(self, max_judgement_dist, scaling_constant, scaling_function):
+        """
+        Article Constructor:
+            -max_judgement_dist: The farthest back a version will be used as a
+                reference version.
+            -scaling_constant: A scaling constant >0 applied to the reputation change
+            -scaling_function: A scaling function applied to the reputation change. Must
+                monotonic and positive.
+        """
         self.versions = []
         self.max_judgement_dist = max_judgement_dist
         self.scaling_constant = scaling_constant
         self.scaling_function = scaling_function
 
     def add_new_version(self, new_version):
+        """
+        Adds a new version to this article and updates the reputation of all versions
+        covered by the max_judgement_dist.
+        """
+
         #Adds the new version to the article's versions list
         self.versions.append(new_version)
 
@@ -44,6 +68,10 @@ class Article:
 
     @classmethod
     def compute_edit_distance(cls, version_1, version_2):
+        """
+        Computes the edit distance between two versions
+        """
+
         #Gets list of tuples representings edits
         split_version_1 = version_1.text.split()
         split_version_2 = version_2.text.split()
@@ -117,6 +145,11 @@ class Article:
 
     @classmethod
     def compute_edit_quality(cls, version_1, version_2, version_3):
+        """
+        Computes the edit distance quality given three versions. A reference version,
+        a judged version, and a new version.
+        """
+
         edit_quality = (cls.compute_edit_distance(version_1, version_3)\
                        - cls.compute_edit_distance(version_2, version_3))\
                        / cls.compute_edit_distance(version_1, version_2)
