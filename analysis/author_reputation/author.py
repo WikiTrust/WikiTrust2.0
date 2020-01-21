@@ -11,7 +11,7 @@ class Author:
     pulling in the future (As is described in paper).
     """
 
-    def __init__(self, author_id, starting_reputation):
+    def __init__(self, author_id, starting_reputation: float) -> None:
         """
         Author Constructor:
             -author_id: A unique identifier representing the author
@@ -21,25 +21,25 @@ class Author:
         self.author_id = author_id
 
         #Initializes the author's reputation to the starting reputation passed
-        self.reputation = starting_reputation
+        self.reputation: float = starting_reputation
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Returns a string interpretation of this Author
         """
         return "Author ID: " + str(self.author_id) + "    Reputation:" + str(self.reputation)
 
-    def get_author_rep(self):
+    def get_author_rep(self) -> float:
         """
         Returns the author's reputation
         """
         return self.reputation
 
-    def set_author_rep(self, new_author_rep):
+    def set_author_rep(self, new_author_rep: float) -> None:
         """
         Sets the author's reputation
         """
-        self.reputation = new_author_rep
+        self.reputation = new_author_rep #max(new_author_rep, 0)
 
     @classmethod
     def check_same_author(cls, author_1, author_2):
