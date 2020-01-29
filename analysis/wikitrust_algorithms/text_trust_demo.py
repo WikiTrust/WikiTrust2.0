@@ -45,7 +45,6 @@ if __name__ == '__main__':
 
     text_list = test_strings[0].split()
 
-    #ver = Version(word_list, edit_list, author_reputation, initial_trust, trust_inheritance_const, revision_const, edge_effect_const)
     ver = Version.create_initial_version(text_list, initial_trust, constants)
 
     print("".join([str(word) for word in ver.word_list]) + "\n")

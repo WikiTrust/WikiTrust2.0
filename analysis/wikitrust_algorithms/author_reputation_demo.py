@@ -121,4 +121,4 @@ if __name__ == '__main__':
 
     path.append(dir(path[0]))
 
-    simple_test()
+    medium_test()
