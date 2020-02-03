@@ -1,7 +1,7 @@
 """
 Module containing Author class. Part of the author_reputation package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
 class Author:
@@ -11,7 +11,7 @@ class Author:
     pulling in the future (As is described in paper).
     """
 
-    def __init__(self, author_id, starting_reputation: float) -> None:
+    def __init__(self, author_id, starting_reputation: float, maximum_reputation: float) -> None:
         """
         Author Constructor:
             -author_id: A unique identifier representing the author
@@ -20,8 +20,10 @@ class Author:
         #Sets the author_id to the passed author_id
         self.author_id = author_id
 
-        #Initializes the author's reputation to the starting reputation passed
+        #Initializes the author's reputation to the starting reputation passed and stores
+        #the maximum possible reputations
         self.reputation: float = starting_reputation
+        self.maximum_reputation: float = maximum_reputation
 
     def __str__(self) -> str:
         """
@@ -39,7 +41,7 @@ class Author:
         """
         Sets the author's reputation
         """
-        self.reputation = new_author_rep #max(new_author_rep, 0)
+        self.reputation = min(max(new_author_rep, 0), self.maximum_reputation)
 
     @classmethod
     def check_same_author(cls, author_1, author_2):

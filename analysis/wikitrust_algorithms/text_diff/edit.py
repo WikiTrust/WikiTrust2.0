@@ -4,6 +4,7 @@ Module containing Edit class. Part of the text_diff package.
 Eric Vin, 2019-2020
 """
 
+#Standard library imports
 from typing import Tuple
 
 class Edit:

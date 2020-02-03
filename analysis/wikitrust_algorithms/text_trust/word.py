@@ -1,9 +1,10 @@
 """
 Module containing Word class. Part of the text_trust package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
+#Standard library imports
 from typing import List
 
 class Word:

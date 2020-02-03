@@ -1,6 +1,6 @@
-from .author_reputation.article import Article
-from .author_reputation.version import Version
-from .author_reputation.author import Author
+from wikitrust_algorithms.author_reputation.article import Article
+from wikitrust_algorithms.author_reputation.version import Version
+from wikitrust_algorithms.author_reputation.author import Author
 
 import math
 
@@ -18,16 +18,16 @@ def simple_test():
     test_strings.append("the lazy fox jumps over the quick brown dog and also other stuff cats and dogs with zebras or lions but not artichokes")
 
     test_authors = []
-    test_authors.append(Author(1, 0))
-    test_authors.append(Author(2, 0))
-    test_authors.append(Author(3, 0))
-    test_authors.append(Author(4, 0))
-    test_authors.append(Author(5, 0))
-    test_authors.append(Author(6, 0))
-    test_authors.append(Author(7, 0))
-    test_authors.append(Author(8, 0))
-    test_authors.append(Author(9, 0))
-    test_authors.append(Author(10, 0))
+    test_authors.append(Author(1, 0, 100))
+    test_authors.append(Author(2, 0, 100))
+    test_authors.append(Author(3, 0, 100))
+    test_authors.append(Author(4, 0, 100))
+    test_authors.append(Author(5, 0, 100))
+    test_authors.append(Author(6, 0, 100))
+    test_authors.append(Author(7, 0, 100))
+    test_authors.append(Author(8, 0, 100))
+    test_authors.append(Author(9, 0, 100))
+    test_authors.append(Author(10, 0, 100))
 
     test_versions = []
 
@@ -68,9 +68,9 @@ def medium_test():
 
     authors_list = []
 
-    author_1 = Author(1, 0)
-    author_2 = Author(2, 0)
-    author_3 = Author(3, 0)
+    author_1 = Author(1, 0, 100)
+    author_2 = Author(2, 0, 100)
+    author_3 = Author(3, 0, 100)
 
     authors_list.append(author_1)
     authors_list.append(author_2)

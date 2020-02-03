@@ -1,14 +1,17 @@
 """
 Module containing Article class. Part of the author_reputation package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
+#Standard library imports
 from typing import List, Tuple, Dict, Callable, Sequence
 
+#author_reputation package imports
 from .version import Version
 from .author import Author
 
+#text_diff package imports
 from wikitrust_algorithms.text_diff.edit import Edit
 from wikitrust_algorithms.text_diff.chdiff import edit_diff_greedy, make_index2
 
@@ -59,10 +62,6 @@ class Article:
             #after the reference version)
             reference_version: Version = self.versions[reference_version_iter]
             judged_version: Version = self.versions[reference_version_iter+1]
-
-            #DEBUG
-            print("(" + str(reference_version.author.author_id) + ", " + str(judged_version.author.author_id) + ", " + str(self.versions[len(self.versions)-1].author.author_id) + ")")
-            print("Edit Quality: " + str(self.compute_edit_quality(reference_version, judged_version, new_version)))
 
             #Checks if author of new_version and the judged_version are the same
             if Author.check_same_author(judged_version.author, new_version.author):
@@ -164,10 +163,6 @@ class Article:
         Computes the edit distance quality given three versions. A reference version,
         a judged version, and a new version.
         """
-        #DEBUG
-        #print("Edit Distance (1,3): " + str(cls.compute_edit_distance(version_1, version_3)))
-        #print("Edit Distance (2,3): " + str(cls.compute_edit_distance(version_2, version_3)))
-        #print("Edit Distance (1,2): " + str(cls.compute_edit_distance(version_1, version_2)))
 
         edit_quality: float = (cls.compute_edit_distance(version_1, version_3)\
                        - cls.compute_edit_distance(version_2, version_3))\

@@ -1,9 +1,10 @@
 """
 Module containing Version class. Part of the author_reputation package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
+#author_reputation package imports
 from .author import Author
 
 class Version:

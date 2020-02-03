@@ -1,13 +1,16 @@
 """
 Module containing Block class. Part of the text_trust package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
+#Standard library imports
 from typing import List
 
+#text_trust package imports
 from .word import Word
 
+#text_diff package imports
 from wikitrust_algorithms.text_diff.edit import Edit
 
 class Block:
@@ -37,8 +40,8 @@ class Block:
         """
         Returns a string interpretation of this Block
         """
-        edit_print: str = str(self.edit)
-        words_print: str = "".join([str(word) for word in self.words])
+        edit_str: str = str(self.edit)
+        words_str: str = "".join([str(word) for word in self.words])
 
         return "Edit Type: %s\nWords: %s\nLeft Bound Change: %s  Right Bound Change: %s" \
-                % (edit_print, words_print, self.left_bound_change, self.right_bound_change)
+                % (edit_str, words_str, self.left_bound_change, self.right_bound_change)

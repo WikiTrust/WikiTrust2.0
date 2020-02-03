@@ -1,12 +1,12 @@
 """
 This file contains an example of how one would use the text_trust package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
-from .text_trust.version import Version
-from .text_trust.block import Block
-from .text_trust.word import Word
+from wikitrust_algorithms.text_trust.version import Version
+from wikitrust_algorithms.text_trust.block import Block
+from wikitrust_algorithms.text_trust.word import Word
 
 from wikitrust_algorithms.text_diff.edit import Edit
 from wikitrust_algorithms.text_diff.chdiff import edit_diff_greedy, make_index2, test_tichy

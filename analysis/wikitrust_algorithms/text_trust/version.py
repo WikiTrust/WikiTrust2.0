@@ -1,16 +1,18 @@
 """
 Module containing Version class. Part of the text_trust package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
+#Standard library imports
 import math
-
 from typing import List, Tuple
 
+#text_trust package imports
 from .block import Block
 from .word import Word
 
+#text_diff package imports
 from wikitrust_algorithms.text_diff.edit import Edit
 
 class Version:
