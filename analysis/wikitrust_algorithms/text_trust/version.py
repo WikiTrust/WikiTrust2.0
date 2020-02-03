@@ -9,8 +9,9 @@ import math
 from typing import List, Tuple
 
 from .block import Block
-from .edit import Edit
 from .word import Word
+
+from wikitrust_algorithms.text_diff.edit import Edit
 
 class Version:
     """

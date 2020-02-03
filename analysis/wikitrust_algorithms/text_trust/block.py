@@ -6,8 +6,9 @@ Eric Vin, 2019
 
 from typing import List
 
-from .edit import Edit
 from .word import Word
+
+from wikitrust_algorithms.text_diff.edit import Edit
 
 class Block:
     """

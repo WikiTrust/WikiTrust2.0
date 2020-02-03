@@ -1,14 +1,14 @@
 """
-Module containing Edit class. Part of the author_reputation package.
+Module containing Edit class. Part of the text_diff package.
 
-Eric Vin, 2019
+Eric Vin, 2019-2020
 """
 
 from typing import Tuple
 
 class Edit:
     """
-    Class representing an edit, i.e. a change from one version to the next. 
+    Class representing an edit, i.e. a change from one version to the next.
     """
 
     #Constants describing edit type

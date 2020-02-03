@@ -4,12 +4,12 @@ This file contains an example of how one would use the text_trust package.
 Eric Vin, 2019
 """
 
-from text_trust.version import Version
-from text_trust.block import Block
-from text_trust.edit import Edit
-from text_trust.word import Word
+from .text_trust.version import Version
+from .text_trust.block import Block
+from .text_trust.word import Word
 
-from chdiff import test_tichy, test_greedy, print_edit_diff
+from wikitrust_algorithms.text_diff.edit import Edit
+from wikitrust_algorithms.text_diff.chdiff import edit_diff_greedy, make_index2, test_tichy
 
 if __name__ == '__main__':
     """

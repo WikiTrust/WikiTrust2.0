@@ -1,7 +1,6 @@
-from author_reputation.article import Article
-from author_reputation.version import Version
-from author_reputation.author import Author
-from author_reputation.edit import Edit
+from .author_reputation.article import Article
+from .author_reputation.version import Version
+from .author_reputation.author import Author
 
 import math
 

@@ -7,9 +7,10 @@ Eric Vin, 2019
 from typing import List, Tuple, Dict, Callable, Sequence
 
 from .version import Version
-from .edit import Edit
 from .author import Author
-from .chdiff import edit_diff_greedy, make_index2
+
+from wikitrust_algorithms.text_diff.edit import Edit
+from wikitrust_algorithms.text_diff.chdiff import edit_diff_greedy, make_index2
 
 class Article:
     """
