@@ -27,8 +27,8 @@ def get_revisions_between(page:pywikibot.page.Page, revision1:pywikibot.page.Rev
     :return: A list of pywikibot.page.Revision objects (dictionaries that store revisions by revid, text changed, timestamp, user, and comment)
              Note that revisions starting earlier will be towards the end of the list
     """
-    firstRevTime = getRevisionMetadata(revision1, "timestamp")
-    secondRevTime = getRevisionMetadata(revision2, "timestamp")
+    firstRevTime = get_revision_metadata(revision1, "timestamp")
+    secondRevTime = get_revision_metadata(revision2, "timestamp")
     if(recent_to_oldest and firstRevTime <= secondRevTime):
         raise ValueError("Second revision must occur before first revision if sorting by recent to oldest")
     elif(not recent_to_oldest and firstRevTime >= secondRevTime):
@@ -45,8 +45,13 @@ def get_text_of_old_revision(page:pywikibot.page.Page, rev_id:int):
     """
     return page.getOldVersion(rev_id)
 
+# TO-DO: Fix this function (doesn't work currently)
+def get_revs_from_revid(page:pywikibot.page.Page, rev_id:int, site:pywikibot.Site = pywikibot.Site('en', 'wikipedia')):
+    site.loadrevisions(page=page, revids=rev_id)
+    return page
 
-def getRevisionMetadata(revision:pywikibot.page.Revision, key:str):
+
+def get_revision_metadata(revision:pywikibot.page.Revision, key:str):
     """
     Returns a piece of metadata associated with a revision
     :param key: A string that corresponds to a valid piece of metadata associated with a revision

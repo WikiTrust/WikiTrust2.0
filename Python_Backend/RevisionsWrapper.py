@@ -7,7 +7,6 @@ engine = SE.SearchEngine()
 processor = PP.PageProcessor()
 
 
-
 def get_readable_text_of_old_revision(page_title:str, rev_id:int):
     """
     Returns a string containing a "readable" version of a revision

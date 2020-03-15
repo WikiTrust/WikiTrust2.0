@@ -31,7 +31,7 @@ class SearchEngine:
             pageList.append(page)
         return pageList
 
-    def getByPageID(self, page_ids:[]):
+    def get_by_pageID(self, page_ids:[]):
         """
         Searches a site for a page based on the page_id
         :param page_id: An integer corresponding to the page_id of the provided page
@@ -42,7 +42,7 @@ class SearchEngine:
         raise NotImplementedError
 
 
-    def getByCategory(self, category:str):
+    def get_by_category(self, category:str):
         """
         Creates list of pages from one category on a site
         :param category: A string corresponding to a page category
@@ -52,7 +52,7 @@ class SearchEngine:
         return categoryPage.articles()
 
 
-    def pullMultipleCategories(self, categories:[]):
+    def pull_multiple_categories(self, categories:[]):
         """
         Creates list of pages from multiple categories
         :param categories: List of page categories on a site
