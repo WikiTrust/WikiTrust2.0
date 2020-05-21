@@ -131,7 +131,7 @@ class Article:
             for move_b in moves_origin_list[(move_a_iter+1):]:
                 origin_valid_move_list.append((move_a, move_b))
 
-        #Creates a list of all origin valid pairs in move_list.
+        #Creates a list of all destination valid pairs in move_list.
         destination_valid_move_list: List[Tuple[Edit, Edit]] = []
 
         for move_a_iter, move_a in enumerate(moves_destination_list):
