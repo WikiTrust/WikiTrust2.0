@@ -34,14 +34,12 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         Field('page_id', 'integer'), # On wikipedia
         Field('environment_id', 'reference environment', ondelete="SET NULL"),
         Field('page_title'),
-        Field('anal')
+        Field('analysis_time', 'datetime'),
     )
 
     db.define_table(
         'revision',
-        Field('rev_id', 'integer'),
-        # In which block it is.
-        Field('block_id', 'reference revision_block'),
+        Field('rev_id', 'integer'), # On wikipedia
         # user id on the wikipedia for this user.
         Field('user_id', 'integer'),
         Field('rev_date', 'datetime'),
