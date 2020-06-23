@@ -25,12 +25,16 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
     old_date = datetime.datetime(year=1980, month=1, day=1)
 
     db.define_table(
+        'environment',
+        Field('environment'),
+    )
+
+    db.define_table(
         'page',
-        Field('page_id', 'integer'),
+        Field('page_id', 'integer'), # On wikipedia
+        Field('environment_id', 'reference environment', ondelete="SET NULL"),
         Field('page_title'),
-        # We want to analyze this page only from this date onwards.  If None, then
-        # analyze from the beginning.
-        Field('analysis_start_time', 'datetime'),
+        Field('anal')
     )
 
     db.define_table(
@@ -42,13 +46,6 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         Field('user_id', 'integer'),
         Field('rev_date', 'datetime'),
         Field('rev_page', 'reference page'),
-        # ID of a blob in GCS or S3 where the text can be found.
-        Field('rev_text'),
-        # ID of a blob in GCS or S3 where the reputation-annotated text can be found.
-        Field('annotated_text'),
-        # Date at which the annotation has been computed, used to estimate whether
-        # it should be recomputed.
-        Field('annotation_date', 'datetime'),
     )
 
     db.define_table(
@@ -75,11 +72,21 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
     )
 
     db.define_table(
+        'text_storage',
+        Field('kind'), # markup, markup_w_rep, markup_w_author, ...
+        Field('revision_id'),
+        Field('page_id'),
+        Field('blob_id'), # pointer to GCS or S3: name of the blob where the revision can be found.
+    )
+
+    db.define_table(
         'user_reputation',
         Field('user_id', 'reference user'),
+        Field('topic id', 'reference topic', ondelete="SET NULL"),
         Field('block_id', 'reference revision_block'),
         Field('amount', 'double'),
     )
+
 
 
 
