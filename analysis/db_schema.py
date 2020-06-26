@@ -42,55 +42,63 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
 
     db.define_table(
         'page',
+        Field('page_id', 'integer'), # On wikipedia
+        
+        Field('environment_id', 'reference environment', ondelete="SET NULL"),
 
-        Field('page_id', 'integer'),
         Field('page_title'),
 
-        # A reference to the environment the page is a part of
-        Field('page_environment', 'reference environment'),
-
-        # We want to analyze this page only from this date onwards.  If None, then
-        # analyze from the beginning.
-        Field('analysis_start_time', 'datetime'),
+        Field('last_check_time', 'datetime'), # Of last check on Wikipedia,
+        # there may be more revisions after this date that we do not know about.
     )
 
     db.define_table(
         'user',
 
-        # The user_id is the same as on the wikipedia.
-        Field('user_id', 'integer'),
+        Field('user_id', 'integer'), # The user_id is the same as on the wikipedia.
+
         Field('user_name'),
-        Field('user_real_name'),
+        
+        Field('user_real_name'), #ASK LUCA, Is this needed?
     )
 
     db.define_table(
         'revision',
+        Field('revision_id', 'integer'), # On Wikipedia
+        
+        Field('user_id', 'integer'), # User id on the wikipedia for this user.
 
-        Field('rev_id', 'integer'),
-
-        # Reference to user who made the revision.
-        Field('user', 'reference user'),
-
-        Field('rev_date', 'datetime'),
-        Field('rev_page', 'reference page'),
-
-        # File name for a the compressed block in GCS and the offset where
-        # the revision is present inside that block.
-        Field('rev_file_name'),
-        Field('rev_file_offset'),
-
-        # NOTE: Plan to use static caching for reputation-annotated text instead, as
-        # it is never used in any other calculations.
-        # ID of a blob in GCS or S3 where the reputation-annotated text can be found.
-        # Field('annotated_text'),
-
-        # Date at which the annotation has been computed, used to estimate whether
-        # it should be recomputed.
-        Field('annotation_date', 'datetime'),
+        Field('revision_date', 'datetime'), 
+        
+        Field('page_id', 'integer'), # On wikipedia 
+        #ASK LUCA, does this need to be stored here if it is in Page table?
+        #Avoids cost of 1 join but duplicate
+        
+        Field('revision_page', 'reference page'), 
+        
+        Field('revision_blob'), # On GCS
+        
+        Field('text_retrieved', 'boolean'), #True means retrieved, False means not retrieved
+        
+        Field('num_attempts', 'integer'), # To get markup from Wikipedia
+        
+        Field('last_attempt_date', 'datetime'), # Can also be a successful attempt.
     )
 
-
-    ### User Reputation Tables ###
+    # Stores what has been done on a revision and whether or not it is locked
+    db.define_table(
+        'revision_log',
+    
+        Field('page', 'reference page'),
+    
+        Field('algorithm'), # Which algorithm this log is in reference to. 
+        #(Text diff, Edit distance, Author rep, etc...)
+    
+        Field('last_revision', 'reference revision'), # Last revision analyzed.
+        #I.E. How far we've gotten
+    
+        Field('lock_date', 'datetime'), # If null or old the page is not locked.
+    )
 
     db.define_table(
         'user_reputation',
@@ -98,25 +106,69 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         # The user in question.
         Field('user', 'reference user'),
 
-        #The environment in which this reputation applies.
+        # The environment in which this reputation applies.
         Field('environment', 'reference environment'),
-
-        Field('reputation', 'double'),
+        
+        # String identifier for algorithm that was run to determine this reputation
+        Field('algorithm'),
+        
+        Field('reputation_value', 'double'),
     )
-
-    ### Cache tables ###
 
     db.define_table(
-        'edit_distance',
+        'text_storage',
 
-        # Note: revision_id_1 < revision_id_2
-        Field('revision_id_1', 'integer'),
-        Field('revision_id_2', 'integer'),
+        Field('kind'), # markup, markup_w_rep, markup_w_author, ...
+        #ASK LUCA, decide on text trust storage
 
-        Field('distance', 'double'),
+        Field('revision_id', 'integer'),
+
+        Field('page_id', 'integer'),
+
+        Field('revision_date', 'datetime'),
+
+        Field('version'), #ASK LUCA, depending on above question, might not be needed
+
+        Field('blob'), # name of GCS blob where info is stored.
     )
 
+    # Cache for edit distance "triangles"
+    db.define_table(
+        'triangles',
+        
+        Field('page', 'reference page'),
+        
+        Field('algorithm'),
+        
+        Field('info', 'text'),
+        # Json containing, for each previous revision p and subsequent revision f,
+        # the distances in the triangle, and the user_ids of the authors.
+        # {'revisions': [34, 35, 37], 'distances': [4.5, 5, 6.7], 'authors': [4, 5, 8], }
 
+        Field('judged_revision', 'integer'), # Revision id of middle revision
+
+        Field('new_version', 'integer'), # Revision id of last revision (Not sure if needed?)
+
+        Field('reputation_inc', 'double'), # How much the reputation was incremented
+        # as a consequence of the triangle.  Set to null if triangle not processed.
+        # This enables triangles to be processed twice. (check that we can query for null numbers).
+    )
+
+    # Cache for text_diff output
+    # It is a good idea to cache the output of chdiff between consecutive revisions.
+    db.define_table(
+        'text_diff',
+
+        Field('origin_revision_id', 'integer'),
+
+        Field('dest_revision_id', 'integer'), 
+        
+        #Note: origin_revision_id < dest_revision_id
+
+        Field('info', 'text') 
+        #Text version of text_diff tuples between origin revision and dest revision       
+
+    )
 
 def create_indices(db):
     """Creates all the indices we need."""
