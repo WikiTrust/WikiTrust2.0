@@ -26,15 +26,10 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
 
     old_date = datetime.datetime(year=1980, month=1, day=1)
 
-    ### Wikipedia Data Tables ###
-
     db.define_table(
         # Environment is a group of pages that are linked such that reputation
         # is shared between them.
         'environment',
-
-        # Unique id for the environment
-        Field('environment_id', 'integer'),
 
         # Plain text name for the environment
         Field('environment_name'),
