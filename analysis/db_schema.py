@@ -165,6 +165,13 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
 
     )
 
+    db.define_table('text_distance',
+        Field('rev_1', 'integer'),
+        Field('rev_2', 'integer'),
+        Field('distance', 'double'),
+        Field('info'), # Algorithm            
+    )
+
 def create_indices(db):
     """Creates all the indices we need."""
     pass
