@@ -84,7 +84,7 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         # This enables triangles to be processed twice. (check that we can query for null numbers).
     )
 
-    # It is a good idea to cache the output of chdiff between consecutive revisions. 
+    # It is a good idea to cache the output of chdiff between consecutive revisions.
 
     db.define_table(
         'reputation',
