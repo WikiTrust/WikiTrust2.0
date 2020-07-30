@@ -62,10 +62,6 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
 
         Field('revision_date', 'datetime'), 
         
-        Field('page_id', 'integer'), # On wikipedia 
-        #ASK LUCA, does this need to be stored here if it is in Page table?
-        #Avoids cost of 1 join but duplicate
-        
         Field('revision_page', 'reference page'), 
         
         Field('revision_blob'), # On GCS
@@ -135,6 +131,7 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         # Json containing, for each previous revision p and subsequent revision f,
         # the distances in the triangle, and the user_ids of the authors.
         # {'revisions': [34, 35, 37], 'distances': [4.5, 5, 6.7], 'authors': [4, 5, 8], }
+        # distances go 1-2, 1-3, 2-3
 
         Field('judged_revision', 'integer'), # Revision id of middle revision
 
