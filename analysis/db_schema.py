@@ -63,13 +63,7 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
 
         Field('revision_date', 'datetime'),
 
-        Field('page_id', 'integer'), # On wikipedia
-        #ASK LUCA, does this need to be stored here if it is in Page table?
-        #Avoids cost of 1 join but duplicate
-
         Field('revision_page', 'reference page'),
-
-        Field('revision_blob'), # On GCS
 
         Field('text_retrieved', 'boolean'), #True means retrieved, False means not retrieved
 
