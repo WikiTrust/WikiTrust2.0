@@ -53,8 +53,6 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         Field('user_id', 'integer'), # The user_id is the same as on the wikipedia.
 
         Field('user_name'),
-
-        Field('user_real_name'), #ASK LUCA, Is this needed?
     )
 
     db.define_table(
@@ -114,7 +112,6 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         'text_storage',
 
         Field('kind'), # markup, markup_w_rep, markup_w_author, ...
-        #ASK LUCA, decide on text trust storage
 
         Field('revision_id', 'integer'),
 
@@ -122,7 +119,7 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
 
         Field('revision_date', 'datetime'),
 
-        Field('version'), #ASK LUCA, depending on above question, might not be needed
+        Field('version'), 
 
         Field('blob'), # name of GCS blob where info is stored.
     )
