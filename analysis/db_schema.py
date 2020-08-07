@@ -16,15 +16,13 @@ from .safelog import Log
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
-def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
+# TODO: read URI from a secrets/config.yaml type of file.
+def connect_to_db(uri, migrate_enabled = False, fake_migrate_all=False):
     db = DAL(uri,
-             migrate_enabled=migrate_enabled,
-             fake_migrate_all=fake_migrate_all,
-             adapter_args=dict(migrator=InDBMigrator),
-             pool_size=10)
-
-
-    old_date = datetime.datetime(year=1980, month=1, day=1)
+         migrate_enabled=migrate_enabled,
+         fake_migrate_all=fake_migrate_all,
+         adapter_args=dict(migrator=InDBMigrator),
+         pool_size=10)
 
     db.define_table(
         # Environment is a group of pages that are linked such that reputation
@@ -164,6 +162,9 @@ def define_tables(uri, migrate_enabled = False, fake_migrate_all=False):
         Field('distance', 'double'),
         Field('info'), # Algorithm
     )
+
+    return db
+
 
 def create_indices(db):
     """Creates all the indices we need."""
