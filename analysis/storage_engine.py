@@ -3,8 +3,14 @@ import datetime
 
 class StorageEngine(object):
 
-    def __init__(self, num_objects_per_blob=10, database_table=None,
+    def __init__(self, db, num_objects_per_blob=10, database_table=None,
                  default_version=None):
+        """
+        :param db: handle to the pydal database to be used.
+        :param num_objects_per_blob:
+        :param database_table:
+        :param default_version:
+        """
         pass
 
 
