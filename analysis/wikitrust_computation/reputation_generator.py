@@ -10,8 +10,7 @@ __MAX_JUDGE_DIST__ = 10
 __SCALING_CONST__ = 1
 __SCALING_FUNC__ = lambda x: math.log(x)
 
-def update_author_reputation(db_uri):
-    db = DAL(db_uri)
+def update_author_reputation(db):
     new_triangles = db(db.triangles.reputation_inc == None).iterselect(orderby=db.triangles.judged_revision)
 
     for triangle_iter in range(len(new_triangles)):

@@ -1,1 +1,2 @@
-def process_text_reputation(db_uri):
+def process_text_reputation(db):
+    pass

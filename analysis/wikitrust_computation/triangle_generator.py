@@ -16,8 +16,7 @@ from wikitrust_algorithms.author_reputation.article import Article
 from wikitrust_algorithms.author_reputation.version import Version
 EDIT_DISTANCE_CALCULATOR = Article(__MAX_JUDGE_DIST__, __SCALING_CONST__, __SCALING_FUNC__)
 
-def compute_triangles_batch(page_id, db_uri):
-    db = DAL(db_uri)
+def compute_triangles_batch(page_id, db):
     page_revs = db(db.revision.page_id == page_id).iterselect(orderby=db.revision.page_id)
 
     # Rolls over current revision into reference revision, initialized to none
