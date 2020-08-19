@@ -64,23 +64,23 @@ def compute_triangles_batch(page_id, db_uri):
 
             triangle_json = json.dumps(triangle_dict)
 
-            db.triangles.update_or_insert((db.triangles.page == page_id) & 
+            db.triangles.update_or_insert((db.triangles.page == page_id) &
                                           (db.triangles.algorithm == __ALGORITHM_VER__) &
                                           (db.triangles.judged_revision == judged_revision_id) &
                                           (db.triangles.new_revision == new_revision_id),
-                                         page = page_id,
-                                         algorithm = __ALGORITHM_VER__,
-                                         info = str(triangle_json),
-                                         judged_revision= judged_revision_id,
-                                         new_revision= new_revision_id,
-                                         reputation_inc = None)
+                                          page=page_id, \
+                                          algorithm=__ALGORITHM_VER__, \
+                                          info=str(triangle_json), \
+                                          judged_revision=judged_revision_id, \
+                                          new_revision=new_revision_id, \
+                                          reputation_inc=None)
 
-        db.revision_log.update_or_insert((db.revision_log.page == page_id) &
-                                         (db.revision_log.algorithm == __ALGORITHM_VER__),
-                                          page = page_id,
-                                          algorithm = __ALGORITHM_VER__,
-                                          last_revision = judged_revision_id,
-                                          lock_date = datetime.date.today()
+        db.revision_log.update_or_insert((db.revision_log.page == page_id) & \
+                                         (db.revision_log.algorithm == __ALGORITHM_VER__), \
+                                          page=page_id, \
+                                          algorithm=__ALGORITHM_VER__, \
+                                          last_revision=judged_revision_id, \
+                                          lock_date=datetime.date.today() \
                                           )
 
         #Rolls over current revision variables into reference revision variables
