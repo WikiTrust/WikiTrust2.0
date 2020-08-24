@@ -61,7 +61,10 @@ def connect_to_db(uri, migrate_enabled = False, fake_migrate_all=False):
 
         Field('revision_date', 'datetime'),
 
-        Field('revision_page', 'reference page'),
+        Field('revision_page', 'integer'),
+
+        Field('prev_revision', 'integer'), #The revision before this one on the page
+        # None if first revision for a page.
 
         Field('text_retrieved', 'boolean'), #True means retrieved, False means not retrieved
 
@@ -89,7 +92,7 @@ def connect_to_db(uri, migrate_enabled = False, fake_migrate_all=False):
         'user_reputation',
 
         # The user in question.
-        Field('user', 'reference user'),
+        Field('user_id', 'integer'),
 
         # The environment in which this reputation applies.
         Field('environment', 'reference environment'),

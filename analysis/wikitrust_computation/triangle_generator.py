@@ -6,6 +6,7 @@ from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 #Algorithm Constants
+__REV_TEXT_VER__ = "REVISION_TEXT_DEV"
 __ALGORITHM_VER__ = "TRIANGLE_GENERATOR_DEV"
 __MAX_JUDGE_DIST__ = 10
 __SCALING_CONST__ = 1
@@ -16,7 +17,7 @@ from wikitrust_algorithms.author_reputation.article import Article
 from wikitrust_algorithms.author_reputation.version import Version
 EDIT_DISTANCE_CALCULATOR = Article(__MAX_JUDGE_DIST__, __SCALING_CONST__, __SCALING_FUNC__)
 
-def compute_triangles_batch(page_id, db):
+def compute_triangles_batch(page_id, db, storage_engine):
     page_revs = db(db.revision.page_id == page_id).iterselect(orderby=db.revision.page_id)
 
     # Rolls over current revision into reference revision, initialized to none
@@ -32,7 +33,7 @@ def compute_triangles_batch(page_id, db):
             #Populates reference_revision_text with current text for use in next iteration
             reference_revision_id = page_revs[rev_num].revision_id
             reference_revision_blob = page_revs[rev_num].revision_blob
-            reference_revision_text = None #TBD Revision storage engine
+            reference_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, rev_num)
             reference_revision_author = page_revs[rev_num].user_id
 
         #Checks that we have access to the reference judged text, add advanced error handling later
@@ -41,7 +42,7 @@ def compute_triangles_batch(page_id, db):
         #Get revision text for current (judged) revision
         judged_revision_id = page_revs[rev_num].revision_id
         judged_revision_blob = page_revs[rev_num].revision_blob
-        judged_revision_text = None #TBD Revision storage engine
+        judged_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, rev_num)
         judged_revision_author = page_revs[rev_num].user_id
 
         #Computes edit distance between reference and current once
@@ -51,7 +52,7 @@ def compute_triangles_batch(page_id, db):
             #Get revision text for new revision
             new_revision_id = page_revs[new_rev_num].revision_id
             new_revision_blob = page_revs[new_rev_num].revision_blob
-            new_revision_text = None #TBD Revision storage engine
+            new_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, new_rev_num)
             new_revision_author = page_revs[new_rev_num].user_id
 
             reference_new_distance = compute_edit_distance(reference_revision_text, new_revision_text)

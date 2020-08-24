@@ -10,7 +10,7 @@ __MAX_JUDGE_DIST__ = 10
 __SCALING_CONST__ = 1
 __SCALING_FUNC__ = lambda x: math.log(x)
 
-def update_author_reputation(db):
+def update_author_reputation(db, storage_engine):
     new_triangles = db(db.triangles.reputation_inc == None).iterselect(orderby=db.triangles.judged_revision)
 
     for triangle_iter in range(len(new_triangles)):
@@ -26,6 +26,7 @@ def update_author_reputation(db):
 
         if reference_author == judged_author:
             # Same author, so no reputation change
+
             target_triangle.update(reputation_inc=0)
 
         else:
@@ -33,8 +34,11 @@ def update_author_reputation(db):
 
             # Retrieves needed information from json
             reference_judged_distance = triangle_json["distances"][0]
+
+            #Calculates triangle_quality from triangle distances
             triangle_quality = (triangle_json["distances"][1] - triangle_json["distances"][2]) \
                                /(triangle_json["distances"][0])
+
             new_author_reputation = db(db.user_reputation.user == new_author).select()[0]
 
             # Computes reputation change to be applied to judged version's author
