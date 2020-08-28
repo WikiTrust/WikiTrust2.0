@@ -4,48 +4,54 @@ import math
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
-#Algorithm Constants
-__ALGORITHM_VER__ = "REPUTATION_GENERATOR_DEV"
-__MAX_JUDGE_DIST__ = 10
-__SCALING_CONST__ = 1
-__SCALING_FUNC__ = lambda x: math.log(x)
+class ReputationGenerator:
+    def __init__(self, db, text_storage_engine, algorithm_ver, scaling_const, scaling_func):
+        self.db = db
+        self.text_storage_engine = text_storage_engine
+        self.algorithm_ver = algorithm_ver
+        self.scaling_const = scaling_const
+        self.scaling_func = scaling_func
 
-def update_author_reputation(db, storage_engine):
-    new_triangles = db(db.triangles.reputation_inc == None).iterselect(orderby=db.triangles.judged_revision)
+    def update_author_reputation(self):
+        #Maps class variables to shorter local variables
+        db = self.db
+        storage_engine = self.text_storage_engine
 
-    for triangle_iter in range(len(new_triangles)):
-        target_triangle = new_triangles[triangle_iter]
+        new_triangles = db(db.triangles.reputation_inc == None).iterselect(orderby=db.triangles.judged_revision)
 
-        # Unpacks triangle JSON
-        triangle_json = json.loads(target_triangle.info)
+        for triangle_iter in range(len(new_triangles)):
+            target_triangle = new_triangles[triangle_iter]
 
-        # Checks that the authors of the judged and reference version are not the same
-        reference_author = triangle_json["authors"][0]
-        judged_author = triangle_json["authors"][1]
-        new_author = triangle_json["authors"][2]
+            # Unpacks triangle JSON
+            triangle_json = json.loads(target_triangle.info)
 
-        if reference_author == judged_author:
-            # Same author, so no reputation change
+            # Checks that the authors of the judged and reference version are not the same
+            reference_author = triangle_json["authors"][0]
+            judged_author = triangle_json["authors"][1]
+            new_author = triangle_json["authors"][2]
 
-            target_triangle.update(reputation_inc=0)
+            if reference_author == judged_author:
+                # Same author, so no reputation change
 
-        else:
-            # Different author, so reputation change applies
+                target_triangle.update(reputation_inc=0)
 
-            # Retrieves needed information from json
-            reference_judged_distance = triangle_json["distances"][0]
+            else:
+                # Different author, so reputation change applies
 
-            #Calculates triangle_quality from triangle distances
-            triangle_quality = (triangle_json["distances"][1] - triangle_json["distances"][2]) \
-                               /(triangle_json["distances"][0])
+                # Retrieves needed information from json
+                reference_judged_distance = triangle_json["distances"][0]
 
-            new_author_reputation = db(db.user_reputation.user == new_author).select()[0]
+                #Calculates triangle_quality from triangle distances
+                triangle_quality = (triangle_json["distances"][1] - triangle_json["distances"][2]) \
+                                   /(triangle_json["distances"][0])
 
-            # Computes reputation change to be applied to judged version's author
-            reputation_change =  __SCALING_CONST__\
-                * reference_judged_distance \
-                * triangle_quality\
-                * __SCALING_FUNC__(new_author_reputation)
+                new_author_reputation = db(db.user_reputation.user == new_author).select()[0]
 
-            # Updates triangle with reputation change
-            target_triangle.update(reputation_inc=reputation_change)
+                # Computes reputation change to be applied to judged version's author
+                reputation_change =  self.scaling_const\
+                    * reference_judged_distance \
+                    * triangle_quality\
+                    * self.scaling_func(new_author_reputation)
+
+                # Updates triangle with reputation change
+                target_triangle.update(reputation_inc=reputation_change)
