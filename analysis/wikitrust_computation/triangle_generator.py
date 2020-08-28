@@ -5,95 +5,169 @@ import datetime
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
-#Algorithm Constants
-__REV_TEXT_VER__ = "REVISION_TEXT_DEV"
-__ALGORITHM_VER__ = "TRIANGLE_GENERATOR_DEV"
-__MAX_JUDGE_DIST__ = 10
-__SCALING_CONST__ = 1
-__SCALING_FUNC__ = lambda x : math.log(x)
+from wikitrust_lib.text_diff.edit import Edit
 
-#Temporarily bootstrapping off old OOP Code, pending non OOP rewrite
-from wikitrust_algorithms.author_reputation.article import Article
-from wikitrust_algorithms.author_reputation.version import Version
-EDIT_DISTANCE_CALCULATOR = Article(__MAX_JUDGE_DIST__, __SCALING_CONST__, __SCALING_FUNC__)
+class TriangleGenerator:
+	def __init__(self, db, text_storage_engine, algorithm_ver, max_judge_dist, text_diff_function, index_function):
+		self.db = db
+		self.text_storage_engine = text_storage_engine
+		self.algorithm_ver = algorithm_ver
+		self.max_judge_dist = max_judge_dist
+		self.text_diff_function = text_diff_function
+		self.index_function
 
-def compute_triangles_batch(page_id, db, storage_engine):
-    page_revs = db(db.revision.page_id == page_id).iterselect(orderby=db.revision.page_id)
+	def compute_triangles_batch(page_id):
+		#Maps class variables to shorter local variables
+		db = self.db
+		storage_engine = self.text_storage_engine
 
-    # Rolls over current revision into reference revision, initialized to none
-    reference_revision_text = None
-    reference_revision_author = None
+		#Retrieves page revisions
+		page_revs = db(db.revision.page_id == page_id).iterselect(orderby=db.revision.page_id)
 
-    for rev_num in range(len(page_revs)):
-        # If this is the first revision, there is no reference revision so we cannot judge it.
-        # We will however, populate reference_revision_text
-        if rev_num == 0:
-            #Checks that we have access to the reference text, add advanced error handling later
-            assert(page_revs[rev_num-1].text_retrieved == True)
-            #Populates reference_revision_text with current text for use in next iteration
-            reference_revision_id = page_revs[rev_num].revision_id
-            reference_revision_blob = page_revs[rev_num].revision_blob
-            reference_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, rev_num)
-            reference_revision_author = page_revs[rev_num].user_id
+		# Rolls over current revision into reference revision, initialized to none
+		reference_revision_text = None
+		reference_revision_author = None
 
-        #Checks that we have access to the reference judged text, add advanced error handling later
-        assert(page_revs[rev_num].text_retrieved == True)
+		for rev_num in range(len(page_revs)):
+			# If this is the first revision, there is no reference revision so we cannot judge it.
+			# We will however, populate reference_revision_text
+			if rev_num == 0:
+				#Checks that we have access to the reference text, add advanced error handling later
+				assert(page_revs[rev_num-1].text_retrieved == True)
+				#Populates reference_revision_text with current text for use in next iteration
+				reference_revision_id = page_revs[rev_num].revision_id
+				reference_revision_blob = page_revs[rev_num].revision_blob
+				reference_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, rev_num)
+				reference_revision_author = page_revs[rev_num].user_id
 
-        #Get revision text for current (judged) revision
-        judged_revision_id = page_revs[rev_num].revision_id
-        judged_revision_blob = page_revs[rev_num].revision_blob
-        judged_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, rev_num)
-        judged_revision_author = page_revs[rev_num].user_id
+			#Checks that we have access to the reference judged text, add advanced error handling later
+			assert(page_revs[rev_num].text_retrieved == True)
 
-        #Computes edit distance between reference and current once
-        reference_current_distance = compute_edit_distance(reference_revision_text, judged_revision_text)
+			#Get revision text for current (judged) revision
+			judged_revision_id = page_revs[rev_num].revision_id
+			judged_revision_blob = page_revs[rev_num].revision_blob
+			judged_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, rev_num)
+			judged_revision_author = page_revs[rev_num].user_id
 
-        for new_rev_num in range(rev_num + 1, rev_num + __MAX_JUDGE_DIST__):
-            #Get revision text for new revision
-            new_revision_id = page_revs[new_rev_num].revision_id
-            new_revision_blob = page_revs[new_rev_num].revision_blob
-            new_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, new_rev_num)
-            new_revision_author = page_revs[new_rev_num].user_id
+			#Computes edit distance between reference and current once
+			reference_current_distance = compute_edit_distance(reference_revision_text, judged_revision_text)
 
-            reference_new_distance = compute_edit_distance(reference_revision_text, new_revision_text)
-            current_new_distance = compute_edit_distance(judged_revision_text, new_revision_text)
+			for new_rev_num in range(rev_num + 1, rev_num + __MAX_JUDGE_DIST__):
+				#Get revision text for new revision
+				new_revision_id = page_revs[new_rev_num].revision_id
+				new_revision_blob = page_revs[new_rev_num].revision_blob
+				new_revision_text = storage_engine.read(page_id, __REV_TEXT_VER__, new_rev_num)
+				new_revision_author = page_revs[new_rev_num].user_id
 
-            triangle_dict = {"revisions": [reference_revision_id, judged_revision_id, new_revision_id], \
-                             "distances": [reference_current_distance, reference_new_distance, current_new_distance], \
-                             "authors":   [reference_revision_author, judged_revision_author, new_revision_author]}
+				reference_new_distance = compute_edit_distance(reference_revision_text, new_revision_text)
+				current_new_distance = compute_edit_distance(judged_revision_text, new_revision_text)
 
-            triangle_json = json.dumps(triangle_dict)
+				triangle_dict = {"revisions": [reference_revision_id, judged_revision_id, new_revision_id], \
+								 "distances": [reference_current_distance, reference_new_distance, current_new_distance], \
+								 "authors":   [reference_revision_author, judged_revision_author, new_revision_author]}
 
-            db.triangles.update_or_insert((db.triangles.page == page_id) &
-                                          (db.triangles.algorithm == __ALGORITHM_VER__) &
-                                          (db.triangles.judged_revision == judged_revision_id) &
-                                          (db.triangles.new_revision == new_revision_id),
-                                          page=page_id, \
-                                          algorithm=__ALGORITHM_VER__, \
-                                          info=str(triangle_json), \
-                                          judged_revision=judged_revision_id, \
-                                          new_revision=new_revision_id, \
-                                          reputation_inc=None)
+				triangle_json = json.dumps(triangle_dict)
 
-        db.revision_log.update_or_insert((db.revision_log.page == page_id) & \
-                                         (db.revision_log.algorithm == __ALGORITHM_VER__), \
-                                          page=page_id, \
-                                          algorithm=__ALGORITHM_VER__, \
-                                          last_revision=judged_revision_id, \
-                                          lock_date=datetime.date.today() \
-                                          )
+				db.triangles.update_or_insert((db.triangles.page == page_id) &
+											(db.triangles.algorithm == __ALGORITHM_VER__) &
+											(db.triangles.judged_revision == judged_revision_id) &
+											(db.triangles.new_revision == new_revision_id),
+											page=page_id, \
+											algorithm=__ALGORITHM_VER__, \
+											info=str(triangle_json), \
+											judged_revision=judged_revision_id, \
+											new_revision=new_revision_id, \
+											reputation_inc=None)
 
-        #Rolls over current revision variables into reference revision variables
-        reference_revision_id = judged_revision_id
-        reference_revision_text = judged_revision_text
-        reference_revision_author = judged_revision_author
+			db.revision_log.update_or_insert((db.revision_log.page == page_id) & \
+											 (db.revision_log.algorithm == __ALGORITHM_VER__), \
+											page=page_id, \
+											algorithm=__ALGORITHM_VER__, \
+											last_revision=judged_revision_id, \
+											lock_date=datetime.date.today() \
+											)
+
+			#Rolls over current revision variables into reference revision variables
+			reference_revision_id = judged_revision_id
+			reference_revision_text = judged_revision_text
+			reference_revision_author = judged_revision_author
 
 
-def compute_triangles_keepup():
-    pass
+	def compute_triangles_keepup():
+		pass
 
-def compute_edit_distance(rev_1_text, rev_2_text):
-    #Temporarily bootstrapping off old OOP Code, pending non OOP rewrite
-    version_1 = Version("author1", rev_1_text)
-    version_2 = Version("author2", rev_2_text)
-    return EDIT_DISTANCE_CALCULATOR.compute_edit_distance(version_1, version_2)
+	def compute_edit_distance(rev_1_text, rev_2_text):
+		"""
+        Computes the edit distance between two revision's text
+        """
+
+        #Gets list of tuples representings edits
+        split_text_1: List[str] = rev_1_text.text.split()
+        split_text_2: List[str] = rev_2_text.text.split()
+        edit_index: Dict[Tuple[str, str], List[int]] = self.index_function(split_text_2)
+        edit_list_tuples: List[Tuple[int, int, int, int]] = self.text_diff_function(split_text_1, split_text_2, edit_index)
+
+        #Converts list of tuples to list of Edits
+        edit_list: List[Edit] = [Edit.edit_tuple_constructor(edit_tuple) for edit_tuple in edit_list_tuples]
+
+        #Calculates insertion_total and deletion_total over all edits in edit_list
+        insertion_total: int = 0
+        deletion_total: int = 0
+
+        for edit in edit_list:
+            if edit.edit_type == Edit.INSERT:
+                #Edit is insertion. Adding the insertion length to the insertion total.
+                insertion_total += edit.length
+            elif edit.edit_type == Edit.DELETE:
+                #Edit is deletion. Adding the deletion length to the deletion total.
+                deletion_total += edit.length
+
+        #Calculates move_total
+        move_total: int = 0
+
+        #Creates a list of all move edits in edit_list
+        move_list: List[Edit] = [edit for edit in edit_list if edit.edit_type == Edit.MOVE]
+
+        #Sorts move_list by the origin of the moves in ascending order
+        moves_origin_list: List[Edit] = sorted(move_list, key=lambda edit: edit.origin)
+
+        #Sorts move_list by the destination of the moves in descending order
+        moves_destination_list: List[Edit] = sorted(move_list, key=lambda edit: edit.destination)[::-1]
+
+        #Now we compute two groups of pairs of moves. Assume a pair consists of (Move a, Move b).
+        #These groups are origin valid pairs and destination valid pairs respectively.
+        #The pair is origin valid iff a.origin < b.origin.
+        #The pair is destination valid iff a.destination > b.destination.
+
+        #Creates a list of all origin valid pairs in move_list.
+        origin_valid_move_list: List[Tuple[Edit, Edit]] = []
+
+        for move_a_iter, move_a in enumerate(moves_origin_list):
+            for move_b in moves_origin_list[(move_a_iter+1):]:
+                origin_valid_move_list.append((move_a, move_b))
+
+        #Creates a list of all destination valid pairs in move_list.
+        destination_valid_move_list: List[Tuple[Edit, Edit]] = []
+
+        for move_a_iter, move_a in enumerate(moves_destination_list):
+            for move_b in moves_destination_list[(move_a_iter+1):]:
+                destination_valid_move_list.append((move_a, move_b))
+
+        #Creates a list of all crossed move pairs. These are move pairs that are both
+        #origin valid and destination valid.
+        crossed_move_list: List[Tuple[Edit, Edit]] = []
+
+        for move_pair in origin_valid_move_list:
+            if move_pair in destination_valid_move_list:
+                crossed_move_list.append(move_pair)
+
+        #Adds the product of the moves in each pair in crossed_move_list to move_total
+        for crossed_move in crossed_move_list:
+            move_total += crossed_move[0].length * crossed_move[1].length
+
+        #Computes the distance from all the totals computed previously
+        distance: float = max(insertion_total, deletion_total)\
+                   - (0.5*max(insertion_total, deletion_total))\
+                   + move_total
+
+        return distance
