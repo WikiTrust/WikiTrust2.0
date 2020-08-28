@@ -63,8 +63,10 @@ def load_page_json_into_storage(storage_engine, json):
         rev_text = json["revisions"][rev_iter]["text"]
         storage_engine.store(page_id, "DUMMY_VERSION", rev_id, rev_text, datetime.datetime.now())
 
-    print(dummy_storage_engine.read(page_id, "DUMMY_VERSION", 429097598))
 if __name__ == '__main__':
+    """ 
+    An example of how to load in a Page JSON (In the format that Luke's revision puller gives)
+    """
     dummy_storage_engine = LocalStorageEngine(db = None)
 
     with open("/home/ericvin/Projects/WikiTrust2.0/LadyGagaMeatDressRevisions/all_revision.json") as json_file:
