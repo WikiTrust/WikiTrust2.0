@@ -9,18 +9,20 @@
 
 # Modified by Eric Vin, 2020
 
-from .configuration import config
+from configuration import config
 import datetime
 import traceback
-from .safelog import Log
+from safelog import Log
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 # TODO: read URI from a secrets/config.yaml type of file.
-def connect_to_db(uri, migrate_enabled = False, fake_migrate_all=False):
+def connect_to_db(uri, migrate_enabled = False, fake_migrate_all= False):
     db = DAL(uri,
-         migrate_enabled=migrate_enabled,
-         fake_migrate_all=fake_migrate_all,
+        migrate=True,
+        fake_migrate=False,
+        migrate_enabled=True,
+        fake_migrate_all=False,
          adapter_args=dict(migrator=InDBMigrator),
          pool_size=10)
 
@@ -61,7 +63,7 @@ def connect_to_db(uri, migrate_enabled = False, fake_migrate_all=False):
 
         Field('revision_date', 'datetime'),
 
-        Field('revision_page', 'integer'),
+        Field('page_id', 'integer'),
 
         Field('prev_revision', 'integer'), #The revision before this one on the page
         # None if first revision for a page.
