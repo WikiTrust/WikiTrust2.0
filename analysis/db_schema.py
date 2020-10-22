@@ -23,8 +23,8 @@ def connect_to_db(uri, migrate_enabled = False, fake_migrate_all= False):
         fake_migrate=False,
         migrate_enabled=True,
         fake_migrate_all=False,
-         adapter_args=dict(migrator=InDBMigrator),
-         pool_size=10)
+        adapter_args=dict(migrator=InDBMigrator),
+        pool_size=10)
 
     db.define_table(
         # Environment is a group of pages that are linked such that reputation
