@@ -1,0 +1,38 @@
+{
+  "name": "wikitrust-extension",
+  "version": "1.0.0",
+  "description": "helloooooooo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WikiTrust/WikiTrust2.0.git"
+  },
+  "keywords": [
+    "wikipedia",
+    "trust",
+    "author",
+    "revision"
+  ],
+  "author": "Wikitrust 2 Authors",
+  "license": "TODOOOOOOO",
+  "bugs": {
+    "url": "https://github.com/WikiTrust/WikiTrust2.0/issues"
+  },
+  "homepage": "https://github.com/WikiTrust/WikiTrust2.0#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/chrome": "^0.0.91",
+    "@types/firefox-webext-browser": "^70.0.1",
+    "@types/node": "^10.0.3",
+    "gts": "^1.1.2",
+    "parcel-bundler": "^1.12.4",
+    "parcel-plugin-wasm.rs": "^1.2.15",
+    "typescript": "~3.7.0"
+  },
+  "scripts": {
+    "prod_build": "npx parcel build ./src/main.ts --out-dir ./core --out-file ./WikiTrust.js",
+    "auto_build": "npx parcel watch ./src/main.ts --out-dir ./core --out-file ./WikiTrust.js",
+    "gts_check": "gts check",
+    "gts_clean": "gts clean",
+    "gts_fix": "gts fix"
+  }
+}
