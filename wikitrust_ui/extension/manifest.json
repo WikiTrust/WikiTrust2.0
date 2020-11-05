@@ -1,0 +1,40 @@
+{
+  "manifest_version": 2,
+  "name": "WikiTrust",
+  "version": "0.1",
+  "author": "WikiTrust Team",
+  "description": "Adds a button to Wikipedia articles to show WikiTrust Highlighting.",
+  "homepage_url": "https://sites.google.com/view/wikitrust2",
+
+  "icons": {
+    "32": "icons/icon32.png",
+    "64": "icons/icon64.png"
+  },
+
+  "permissions": [
+    "http://*.wikipedia.org/wiki/*",
+    "https://*.wikipedia.org/wiki/*"
+  ],
+
+  "web_accessible_resources": [
+    "core/WikiTrust.js",
+    "core/WikiTrust.js.map",
+    "core/WikiTrustStyle.css",
+    "core/UIFrame.html",
+    "core/Gradient.png",
+    "core/Gradient_180.jpg",
+    "core/*"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*.wikipedia.org/wiki/*",
+        "https://*.wikipedia.org/wiki/*"
+      ],
+      "js": ["core/WikiTrust.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}
