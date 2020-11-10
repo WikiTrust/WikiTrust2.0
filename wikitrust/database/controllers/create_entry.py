@@ -57,23 +57,33 @@ def create_revision_log(
     version = '', 
     stage = '', 
     page_id = -1, 
-    last_rev = -1, 
+    last_rev = None, 
     lock_date = None
 ):
-    ret = db.revision_log.insert(version = version, stage = stage, page_id = page_id, last_rev = last_rev, lock_date = lock_date)
-    db.commit()
-    return ret
+    x = db.revision_log.version = version
+    y = db.revision_log.page_id = page_id
+    
+    if(db(x & y).select().first() == None)
+        ret = db.revision_log.insert(version = version, stage = stage, page_id = page_id, last_rev = last_rev, lock_date = lock_date)
+        db.commit()
+        return ret
+    return None
 
 def create_user_reputation(
     db, 
     version = '', 
     user_id = -1, 
     environment = None, 
-    reputation_value = -1
+    reputation_value = 0
 ):
-    ret = db.user_reputation.insert(version = version, user_id = user_id, environment = environment, reputation_value = reputation_value)
-    db.commit()
-    return ret
+    x = db.user_reputation.version = version
+    y = db.user_reputation.user_id = user_id
+    z = db.user_reputation.environment = environment
+    if(db(x & y & z).select().first() == None):
+        ret = db.user_reputation.insert(version = version, user_id = user_id, environment = environment, reputation_value = reputation_value)
+        db.commit()
+        return ret
+    return None
 
 def create_text_storage(
     db, 

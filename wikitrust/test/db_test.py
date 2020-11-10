@@ -8,10 +8,12 @@ def populate(db):
         data = json.load(f)
     env = create.create_environment(db, 'ladygaga').id
     create.create_page(db, data['pageId'], env, 'LadyGagaMeatDress', None)
+    create.create_revision_log(db, 'test', None, data['pageId'])
 
     for rev in data['revisions']:
         print(rev['revisionId'])
         create.create_revision(db, rev['revisionId'], data['pageId'], rev['userId'])
         create.create_user(db, rev['userId'])
+        create.create_user_reputation(db, 'test', rev['userId'], env)
     x =  comp(db)
     x.populate_prev_rev(data['pageId'])
