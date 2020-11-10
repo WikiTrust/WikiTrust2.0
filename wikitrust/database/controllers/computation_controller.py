@@ -19,4 +19,15 @@ class computation_engine_db_controller:
             print(str(rev.rev_id) + " : " + str(prev2))
             x+=1
         print(x)
-        
+    
+    #parameters rev_id
+    #return previous revision id
+    def get_prev_rev(self, rev_id):
+        return 0
+
+    #version, user_id, environment
+    #return reputation of user
+    def get_reputation(self, version, user_id, env):
+        return 0.0
+
+    
