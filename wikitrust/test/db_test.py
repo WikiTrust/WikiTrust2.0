@@ -1,6 +1,6 @@
-import wikitrust.database.db_schema as schema 
-import wikitrust.database.controllers.create as create
-import wikitrust.database.controllers.computation_controller as comp
+import database.db_schema as schema 
+import database.controllers.create as create
+import database.controllers.computation_controller as comp
 import json
 
 def populate():
