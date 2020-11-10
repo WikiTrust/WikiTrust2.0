@@ -72,7 +72,7 @@ class computation_engine_db_controller:
         y = self.db.revision_log.page_id = page_id
         rev_log = self.db(x & y).select().first()
         if(rev_log == None):
-            create.create_revision_log(self.db, version, stage, page_id, rev, date.today())
+            rev_log = create.create_revision_log(self.db, version, stage, page_id, rev, date.today())
         else: 
             rev_log.stage = stage
             rev_log.last_rev = rev
