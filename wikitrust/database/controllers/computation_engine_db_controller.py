@@ -9,7 +9,6 @@ class computation_engine_db_controller:
 
     def populate_prev_rev(self, page_id):
         all_revs = self.db(self.db.revision.page_id == page_id).iterselect(orderby=self.db.revision.rev_id)
-        x=0
         prev2 = None
         for rev in all_revs:
             prev = rev
@@ -18,8 +17,6 @@ class computation_engine_db_controller:
             self.db.commit()
             prev2 = prev.rev_id
             print(str(rev.rev_id) + " : " + str(prev2))
-            x+=1
-        print(x)
     
     #parameters: parameters rev_id
     #return previous revision id
@@ -36,7 +33,7 @@ class computation_engine_db_controller:
         user_rep = self.db(x & y & z).select().first()
         return user_rep.reputation_value
 
-    def update_or_insert_triange(self, version, page_id, rev_1, rev_2, rev_3, rep = 0):
+    def update_or_insert_triangle(self, version, page_id, rev_1, rev_2, rev_3, rep = 0):
         v = self.db.triangles.version = version
         w = self.db.triangles.page_id = page_id
         x = self.db.triangles.rev_id_1 = rev_1
