@@ -20,14 +20,32 @@ class computation_engine_db_controller:
             x+=1
         print(x)
     
-    #parameters rev_id
+    #parameters: parameters rev_id
     #return previous revision id
     def get_prev_rev(self, rev_id):
         return 0
 
-    #version, user_id, environment
+    #parameters: version, user_id, environment
     #return reputation of user
     def get_reputation(self, version, user_id, env):
         return 0.0
 
+    #parameters: version, page_id
+    #return all triangles in chronological order
+    def get_all_triangles_chronological(self, version, page_id):
+        return 0
+
+    #paramters: id, reputation
+    #return nothing
+    def update_triangle(self, id, reputation):
+        return 0
     
+    #parameters: page_id
+    #return all revisions and if the text has been retrieved
+    def get_all_revisions(self, page_id):
+        return 0
+    
+    #parameters: version, stage, page_id, revision
+    #return 
+    def update_revision_log(self, version, stage, page_id, revision):
+        return 0
