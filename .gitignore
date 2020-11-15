@@ -1,4 +1,6 @@
 *.pyc
+.idea/
+.vscode/
 
 # ------- Secret Stuff (Keys etc...) ----------
 private/
