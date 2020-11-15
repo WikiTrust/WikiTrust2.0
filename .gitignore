@@ -4,6 +4,9 @@
 private/
 */secrets.yaml
 
+# ------- Databases / other files ----------
+*.sqlite
+
 # ------- Local Configs (IDE Settings, OS files etc...) ----------
 # visual studio code user configs
 .vs/

@@ -9,15 +9,15 @@
 
 # Modified by Eric Vin, 2020
 
-from configuration import config
+#from configuration import config
 import datetime
 import traceback
-from safelog import Log
+#from safelog import Log
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 # TODO: read URI from a secrets/config.yaml type of file.
-def connect_to_db(uri, migrate_enabled = False, fake_migrate_all= False):
+def connect_to_db(uri = 'sqlite://storage.sqlite'):
     db = DAL(uri,
         migrate=True,
         fake_migrate=False,
@@ -26,148 +26,164 @@ def connect_to_db(uri, migrate_enabled = False, fake_migrate_all= False):
         adapter_args=dict(migrator=InDBMigrator),
         pool_size=10)
 
-    db.define_table(
-        # Environment is a group of pages that are linked such that reputation
-        # is shared between them.
-        'environment',
+    try:
+        db.define_table(
+            # Environment is a group of pages that are linked such that reputation.
+            # is shared between them.
+            'environment',
+            # Plain text name for the environment.
+            Field('environment_name')
+        )
+    except: pass
 
-        # Plain text name for the environment
-        Field('environment_name'),
-    )
+    try:
+        db.define_table(
+            'page',
 
-    db.define_table(
-        'page',
-        Field('page_id', 'integer'), # On wikipedia
+            # Page ID on Wikipedia.
+            Field('page_id', 'integer', unique = True),
+            Field('environment_id', 'reference environment', ondelete="SET NULL"),
+            Field('page_title'),
+            # Datetime for last time revision puller checked this page for new revisions.
+            # There may be more revisions after this date that we do not know about.
+            Field('last_check_time', 'datetime'),
+        )
+    except: pass
 
-        Field('environment_id', 'reference environment', ondelete="SET NULL"),
+    try:
+        db.define_table(
+            'user',
 
-        Field('page_title'),
+            # User ID on Wikipedia.
+            Field('user_id', 'integer', unique = True),
+            Field('user_name'),
+        )
+    except: pass
 
-        Field('last_check_time', 'datetime'), # Of last check on Wikipedia,
-        # there may be more revisions after this date that we do not know about.
-    )
+    try:
+        db.define_table(
+            'revision',
 
-    db.define_table(
-        'user',
+            # Various IDs on Wikipedia.
+            Field('rev_id', 'integer', unique = True),
+            Field('page_id', 'integer'),
+            Field('user_id', 'integer'),
+            # Datetime this revision was made on Wikipedia.
+            Field('rev_date', 'datetime'),
+            # The revision before this one on the page.
+            # None if first revision for a page.
+            Field('prev_rev', 'integer'),
+            # True means retrieved, False means not retrieved.
+            Field('text_retrieved', 'boolean'),
+            # Datetime of last attempt to retrieve revision.
+            # Can also be a successful attempt.
+            Field('last_attempt_date', 'datetime'),
+            # Number of attempts made to get markup from Wikipedia.
+            Field('num_attempts', 'integer'),
+        )
+    except: pass
 
-        Field('user_id', 'integer'), # The user_id is the same as on the wikipedia.
+    try:
+        # Tracks what stage a page is at in the Computation Engine
+        db.define_table(
+            'revision_log',
 
-        Field('user_name'),
-    )
+            # The Version of the code this is in reference to.
+            Field('version'),
+            # Which stage in the computation engine this log is in reference to.
+            # (Text diff, Edit distance, Author rep, etc...).
+            Field('stage'),
+            # Page ID on Wikipedia.
+            Field('page_id', 'integer'),
+            # Revision ID on Wikipedia of last revision analyzed.
+            Field('last_rev', 'integer'),
+            # Datetime that this was locked.
+            # If null or old the page is not locked.
+            Field('lock_date', 'datetime'),
+        )
+    except: pass
 
-    db.define_table(
-        'revision',
-        Field('revision_id', 'integer'), # On Wikipedia
+    try:
+        db.define_table(
+            'user_reputation',
 
-        Field('user_id', 'integer'), # User id on the wikipedia for this user.
+            # The Version of the code this is in reference to.
+            Field('version'),
+            # User ID on Wikipedia.
+            Field('user_id', 'integer'),
+            # The environment in which this reputation applies.
+            Field('environment', 'reference environment'),
+            # Double containing the reuptation of the user.
+            Field('reputation_value', 'double'),
+        )
+    except: pass
 
-        Field('revision_date', 'datetime'),
+    try:
+        db.define_table(
+            'text_storage',
 
-        Field('page_id', 'integer'),
+            # The Version of the code that was used to generate the text.
+            Field('version'),
+            # Various IDs on Wikipedia.
+            Field('page_id', 'integer'),
+            Field('rev_id', 'integer'),
+            # Kind of text being stored (markup, markup_w_rep, markup_w_author, ...).
+            Field('text_type'),
+            # Name of GCS blob where info is stored.
+            Field('blob'),
+        )
+    except: pass
 
-        Field('prev_revision', 'integer'), #The revision before this one on the page
-        # None if first revision for a page.
+    try:
+        # Cache for edit distance "triangles"
+        db.define_table(
+            'triangles',
 
-        Field('text_retrieved', 'boolean'), #True means retrieved, False means not retrieved
+            # The Version of the code that was used to generate the text.
+            Field('version'),
+            # Page ID on Wikipedia for the triangle's page.
+            Field('page_id', 'integer'),
+            # Revision IDs for three revisions in a triangle.
+            Field('rev_id_1', 'integer'),
+            Field('rev_id_2', 'integer'),
+            Field('rev_id_3', 'integer'),
+            # How much the reputation was incremented as a consequence of the triangle.
+            # Set to null if triangle not processed.
+            # This enables triangles to be processed twice. (Check that we can query for null numbers).
+            Field('reputation_inc', 'double'),
+        )
+    except: pass
 
-        Field('num_attempts', 'integer'), # To get markup from Wikipedia
+    try:
+        # Cache for text difference.
+        db.define_table(
+            'text_diff',
 
-        Field('last_attempt_date', 'datetime'), # Can also be a successful attempt.
-    )
+            # The Version of the code that was used to generate the diff.
+            Field('version'),
+            # Revision IDs for difference.
+            # Note: rev_id_1 < rev_id_2
+            Field('rev_id_1', 'integer'),
+            Field('rev_id_2', 'integer'),
+            # Text version of text_diff tuples between rev_id_1 and rev_id_2
+            Field('info', 'text')
+        )
+    except: pass
 
-    # Stores what has been done on a revision and whether or not it is locked
-    db.define_table(
-        'revision_log',
+    try:
+        db.define_table(
+            'text_distance',
 
-        Field('page', 'reference page'),
-
-        Field('algorithm'), # Which algorithm this log is in reference to.
-        #(Text diff, Edit distance, Author rep, etc...)
-
-        Field('last_revision', 'reference revision'), # Last revision analyzed.
-        #I.E. How far we've gotten
-
-        Field('lock_date', 'datetime'), # If null or old the page is not locked.
-    )
-
-    db.define_table(
-        'user_reputation',
-
-        # The user in question.
-        Field('user_id', 'integer'),
-
-        # The environment in which this reputation applies.
-        Field('environment', 'reference environment'),
-
-        # String identifier for algorithm that was run to determine this reputation
-        Field('algorithm'),
-
-        Field('reputation_value', 'double'),
-    )
-
-    db.define_table(
-        'text_storage',
-
-        Field('kind'), # markup, markup_w_rep, markup_w_author, ...
-
-        Field('revision_id', 'integer'),
-
-        Field('page_id', 'integer'),
-
-        Field('revision_date', 'datetime'),
-
-        Field('version'),
-
-        Field('blob'), # name of GCS blob where info is stored.
-    )
-
-    # Cache for edit distance "triangles"
-    db.define_table(
-        'triangles',
-
-        Field('page', 'reference page'),
-
-        Field('algorithm'),
-
-        Field('info', 'text'),
-        # Json containing, for each previous revision p and subsequent revision f,
-        # the distances in the triangle, and the user_ids of the authors.
-        # {'revisions': [34, 35, 37], 'distances': [4.5, 5, 6.7], 'authors': [4, 5, 8], }
-        # distances go 1-2, 1-3, 2-3
-
-        Field('revid_1', 'integer'),
-        Field('revid_2', 'integer'),
-        Field('revid_3', 'integer'),
-
-        Field('reputation_inc', 'double'), # How much the reputation was incremented
-        # as a consequence of the triangle.  Set to null if triangle not processed.
-        # This enables triangles to be processed twice. (check that we can query for null numbers).
-    )
-
-    # It is a good idea to cache the output of chdiff between consecutive revisions.
-
-    # Cache for text_diff output
-    # It is a good idea to cache the output of chdiff between consecutive revisions.
-    db.define_table(
-        'text_diff',
-
-        Field('origin_revision_id', 'integer'),
-
-        Field('dest_revision_id', 'integer'),
-
-        #Note: origin_revision_id < dest_revision_id
-
-        Field('info', 'text')
-        #Text version of text_diff tuples between origin revision and dest revision
-
-    )
-
-    db.define_table('text_distance',
-        Field('rev_1', 'integer'),
-        Field('rev_2', 'integer'),
-        Field('distance', 'double'),
-        Field('info'), # Algorithm
-    )
+            # The Version of the code that was used to generate the distance.
+            Field('version'),
+            # Revision IDs for difference.
+            # Note: rev_id_1 < rev_id_2
+            Field('rev_id_1', 'integer'),
+            Field('rev_id_2', 'integer'),
+            # Numerical distance between rev_id_1 and rev_id_2.
+            Field('distance', 'double'),
+        )
+    except: pass
 
     return db
 
