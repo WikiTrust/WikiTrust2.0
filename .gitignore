@@ -1,3 +1,7 @@
+*.pyc
+
+# ------- Secret Stuff (Keys etc...) ----------
+private/
 */secrets.yaml
 *.pyc
 wikitrust-prod*.json

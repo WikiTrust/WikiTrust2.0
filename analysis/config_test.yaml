@@ -1,3 +1,0 @@
-secrets_filename: secrets.yaml
-is_prod: false
-database: test_database
