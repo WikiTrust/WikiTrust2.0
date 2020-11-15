@@ -1,7 +1,6 @@
-# Luca de Alfaro, Massimo Di Pierro 2019
-# BSD License
-import os
 import datetime
+from datetime import datetime
+import os
 import json
 import traceback
 import zlib
@@ -13,15 +12,21 @@ from threading import Lock
 
 __all__ = ['StorageEngine']
 
-
 class StorageEngine(object):
 
-    def __init__(self, bucket_name=None, num_revs_per_file=None):
+    def __init__(self, num_revs_per_file=10, bucket_name=None, database_table=None,
+                 default_version=0):
         """
+        :param db: handle to the pydal database to be used.
+        :param num_objects_per_blob:
+        :param str database_table: the name of the database table for the storage engine
+        :param default_version: Default blob version
+
         Builds an GCS access controller.
         Another way is to provide the path to the json via:
         export GOOGLE_APPLICATION_CREDENTIALS="[PATH]"
         """
+        self.db_table = db.database_table
         json_key = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
         self.client = storage.Client.from_service_account_json(json_key)
         self.bucket_name = bucket_name
@@ -31,27 +36,78 @@ class StorageEngine(object):
         self.cache_size = 1000
         self.revision_dict = {}
         self.current_blob_name = None
+        self.default_version = default_version
 
-    def store(self, revision):
-        """Stores a revision if it is new.
-        :returns: True unless an error happens: whether the revision is new or not.
-        If di is not None, then stores in the table the location of the revision.
-        :param revision: A dict containing the a key value pair where the key is the revision ID & the value is the revision text """
-        revision_id = list(revision.keys())[0]
+        pass
+
+
+    def store(self, page_id: int, version_id: str, rev_id: int, text: str, timestamp: datetime.datetime, kind: str):
+        """Writes to the store.
+        :param page_id: id of page (or in general, of compression space)
+        :param version_id: id of the version we are writing.
+        :param rev_id: id of revision (or in general, of object in space)
+        :param text: text to be written (a python string)
+        :param timestamp: timestamp originally of revision in wikipedia.
+        :return: a boolean indicating whether all has been written (True) or whether some
+            changes are pending (False) for the given page_id and version_id.
+        """
+        
         with self.lock:
-            if revision_id is None:
-                print("Could not write revision: No revision_id")
+            if rev_id is None:
+                print("Could not write revision: No rev_id")
                 return False
 
             if self.current_blob_name is None:
-                self.current_blob_name = revision_id
-                # Todo (if passing db): Writes revision path to revision table if new.
-            # Maybe useful: path = self.bucket_name + '/' + self.current_blob_name
-
-            self.revision_dict[str(revision_id)] = revision[revision_id]
+                self.current_blob_name = rev_id + "-" + version_id
+                
+            self.db_table.insert(revision_id=rev_id, version=version_id, blob=self.current_blob_name,
+                revision_date = timestamp, kind=kind)
+            
+            self.revision_dict[str(rev_id)] = text
             if len(self.revision_dict) >= self.num_revs_per_file:
                 self.__write_revisions()
-            return True
+                return True
+            return False
+
+        return False
+
+
+    def read(self, page_id: int, version_id: str, rev_id: int, do_cache=True) -> str:
+        """
+        Reads from the text storage.
+        :param page_id:
+        :param version_id:
+        :param rev_id:
+        :return: The string that was written.
+        """
+        query = (self.db_table.version == version_id) and (page_id == self.db_table.page_id) and (rev_id == self.db_table.revision_id)
+        blob_list = self.db_table(query).select(self.db_table.blob)
+        if len(blob_list) <= 0:
+            return None
+        blob_name = blob_list[0] + "-" + version_id
+
+        s = None
+        if do_cache and blob_name in self.cache:
+            s = self.cache[blob_name]
+        if s is None:
+            s = self.__read(self.bucket_name, blob_name)
+            if s and do_cache:
+                self.__make_cache_space()
+                self.cache[blob_name] = s
+        if s is not None:
+            revision_dict = json.loads(zlib.decompress(s).decode('utf-8'))
+            try:
+                return revision_dict[rev_id]
+            except:
+                return None
+        else:
+            return None
+
+
+    def flush(self):
+        """Writes any remaining revisions to the GCS bucket immediately."""
+        with self.lock:
+            self.__write_revisions()
 
     def __write_revisions(self):
         """Compresses and stores the revisions in self.revision_dict in gcs"""
@@ -63,51 +119,31 @@ class StorageEngine(object):
             # Empties the memory list.
         self.revision_dict = {}
         self.current_blob_name = None
-                
 
-    def flush(self):
+    def __write(self, bucketname, filename, content, type='text/plain'):
         """
-        Writes any remaining revisions to the GSC bucket immediately.
+        Writes content to GCS from a string
+        :param bucketname: Bucket name.
+        :param filename: File name in GCS.
+        :param content: Content to be written.
+        :param type: Type (default: text/plain).
+        :return: Nothing.
         """
-        with self.lock:
-            self.__write_revisions()
+        bucket = self.client.get_bucket(bucketname)
+        blob = storage.Blob(filename, bucket)
+        blob.upload_from_string(content, content_type=type)
 
-    def read_revision(self, revision_id=None, path=None, do_cache=True):
+    def __read(self, bucketname, filename):
         """
-        Returns a revision with a given revision_id, or None if there is no such revision.
-        :param str revision_id: (Default = None) the revision_id to retrieve
-        :param str path: (Default = None) the path to the GCS blob containing this revision. ie: bucket_name/blob_name
-        :param bool do_cache: (Default = True) Use the cache. Attempts to returns revision text from the cache with a GCS fallback. If the requested revision was not in the cache, save that revision to the cache.
+        Reads content from GCS.
+        :param bucketname: Bucket name.
+        :param filename: File name.
+        :return: The content read.
         """
-        #    Luca Tweet Data Interface comment:
-        #    One can either specify a data interface (di) and a tweet_id
-        #    or a datastore path and the index within that path
+        bucket = self.client.get_bucket(bucketname)
+        blob = storage.Blob(filename, bucket)
+        return blob.download_as_string() # returns None if not present
 
-        # only read from database if we do not already know
-                # if di and tweet_id and not path and not idx:
-                #     path, idx = di.read_tweet_location(tweet_id)
-                # if path is None:
-                #     return None
-        path_parts = path.split('/')
-        bucket_name = path_parts[0]
-        blob_name = path_parts[1]
-        s = None
-        if do_cache and path in self.cache:
-            s = self.cache[path]
-        if s is None:
-            s = self.__read(bucket_name, blob_name)
-            if s and do_cache:
-                self.__make_cache_space()
-                self.cache[blob_name] = s
-        if s is not None:
-            revision_dict = json.loads(zlib.decompress(s).decode('utf-8'))
-            print(revision_dict)
-            try:
-                return revision_dict[revision_id]
-            except:
-                return None
-        else:
-            return None
 
     def __make_cache_space(self):
         """
@@ -132,19 +168,6 @@ class StorageEngine(object):
         """
         self.flush()
         pass
-    
-    def __write(self, bucketname, filename, content, type='text/plain'):
-        """
-        Writes content to GCS from a string
-        :param bucketname: Bucket name.
-        :param filename: File name in GCS.
-        :param content: Content to be written.
-        :param type: Type (default: text/plain).
-        :return: Nothing.
-        """
-        bucket = self.client.get_bucket(bucketname)
-        blob = storage.Blob(filename, bucket)
-        blob.upload_from_string(content, content_type=type)
 
     def __upload(self, bucketname, filename, local_file, type='text/plain'):
         """
@@ -158,17 +181,6 @@ class StorageEngine(object):
         bucket = self.client.get_bucket(bucketname)
         blob = storage.Blob(filename, bucket)
         blob.upload_from_file(local_file, content_type=type)
-
-    def __read(self, bucketname, filename):
-        """
-        Reads content from GCS.
-        :param bucketname: Bucket name.
-        :param filename: File name.
-        :return: The content read.
-        """
-        bucket = self.client.get_bucket(bucketname)
-        blob = storage.Blob(filename, bucket)
-        return blob.download_as_string() # returns None if not present
 
     def __download(self, bucketname, filename, local_file):
         """
@@ -204,14 +216,8 @@ class StorageEngine(object):
         return [blob.name for k, blob in enumerate(bucket.list_blobs())
                 if maximum is None or k < maximum]
 
+class RevisionEngine(StorageEngine):
+    pass
 
-
-if __name__ == '__main__':
-    se = StorageEngine(bucket_name='wikitrust-testing', num_revs_per_file=2)
-
-    for i in range(4):
-        print("Writing revision " + str(i))
-        rev = {str(i)+"asdf": "stuff" + str(i)}
-        se.store(rev)
-
-    print(se.read_revision("1asdf", "wikitrust-testing/0asdf"))
+class TextReputationEngine(StorageEngine):
+    pass
