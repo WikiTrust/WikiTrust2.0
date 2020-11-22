@@ -14,7 +14,7 @@ __all__ = ['StorageEngine']
 
 class StorageEngine(object):
 
-    def __init__(self, num_revs_per_file=10, bucket_name=None, database_table=None,
+    def __init__(self, num_revs_per_file=10, bucket_name=None, db=None, database_table=None,
                  default_version=0):
         """
         :param db: handle to the pydal database to be used.
@@ -26,6 +26,7 @@ class StorageEngine(object):
         Another way is to provide the path to the json via:
         export GOOGLE_APPLICATION_CREDENTIALS="[PATH]"
         """
+        self.db = db
         self.db_table = database_table
         #json_key = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
         json_key = "storage_engine/private/wikitrust-prod-643472bb33d3.json"
@@ -52,17 +53,15 @@ class StorageEngine(object):
         :return: a boolean indicating whether all has been written (True) or whether some
             changes are pending (False) for the given page_id and version_id.
         """
-        
         with self.lock:
             if rev_id is None:
                 print("Could not write revision: No rev_id")
                 return False
 
             if self.current_blob_name is None:
-                self.current_blob_name = str(rev_id) + "-" + str(version_id)
+                self.current_blob_name = str(rev_id) + "-" + version_id
                 
-            self.db_table.insert(revision_id=rev_id, version=version_id, blob=self.current_blob_name,
-                revision_date = timestamp, kind=kind)
+            self.db_table.insert(rev_id=rev_id, version=version_id, blob=self.current_blob_name, text_type=kind)
             
             self.revision_dict[str(rev_id)] = text
             if len(self.revision_dict) >= self.num_revs_per_file:
@@ -81,11 +80,12 @@ class StorageEngine(object):
         :param rev_id:
         :return: The string that was written.
         """
-        query = (self.db_table.version == version_id) and (page_id == self.db_table.page_id) and (rev_id == self.db_table.revision_id)
-        blob_list = self.db_table(query).select(self.db_table.blob)
+        query = (self.db_table.version == version_id) and (page_id == self.db_table.page_id) and (rev_id == self.db_table.rev_id)
+        blob_list = self.db(query).select(self.db_table.blob)
         if len(blob_list) <= 0:
             return None
-        blob_name = blob_list[0] + "-" + version_id
+        
+        blob_name = blob_list[0].blob
 
         s = None
         if do_cache and blob_name in self.cache:
@@ -98,7 +98,7 @@ class StorageEngine(object):
         if s is not None:
             revision_dict = json.loads(zlib.decompress(s).decode('utf-8'))
             try:
-                return revision_dict[rev_id]
+                return revision_dict[str(rev_id)]
             except:
                 return None
         else:

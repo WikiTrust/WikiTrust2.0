@@ -2,6 +2,7 @@
 
 # ------- Secret Stuff (Keys etc...) ----------
 private/
+secrets/
 */secrets.yaml
 
 # ------- Databases / other files ----------
