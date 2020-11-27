@@ -62,7 +62,7 @@ class StorageEngine(object):
                 self.current_blob_name = str(rev_id) + "-" + version_id
                 
             self.db_table.insert(rev_id=rev_id, version=version_id, blob=self.current_blob_name, text_type=kind)
-            
+            self.db.commit()
             self.revision_dict[str(rev_id)] = text
             if len(self.revision_dict) >= self.num_revs_per_file:
                 self.__write_revisions()
