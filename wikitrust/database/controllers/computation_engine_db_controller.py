@@ -38,7 +38,7 @@ class computation_engine_db_controller:
         user_rep = self.db(x & y & z).select(self.db.user_reputation.reputation_value)
         if(len(user_rep) > 1):
             logging.error("MORE THAN ONE USER FOUND WHEN USING get_reputation")
-        user_rep = .first().reputation_value
+        user_rep = user_rep.first().reputation_value
         return user_rep
 
     #parameters: version, user_id, env, reputation
