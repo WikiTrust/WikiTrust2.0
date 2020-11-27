@@ -57,7 +57,7 @@ class computation_engine_db_controller:
     def get_all_triangles_chronological(self, version, page_id):
         x = self.db.triangles.page_id == page_id
         y = self.db.triangles.version == version
-        all_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_3)
+        all_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_2)
         return all_triangles
     
     #parameters: page_id
@@ -85,9 +85,8 @@ class computation_engine_db_controller:
 
     #parameters: version, page_id
     #return: all unprocessed triangles, in chronological order, by third revision, for a given page
-    def get_all_unprocessed_triangles(self, version, page_id):
-        x = self.db.triangles.page_id == page_id
-        y = self.db.triangles.version == version
-        z = self.db.triangles.reputation_inc == None
-        unprocessed_triangles = self.db(x & y & z).iterselect(orderby=self.db.triangles.rev_id_3)
+    def get_all_unprocessed_triangles(self, version):
+        x = self.db.triangles.version == version
+        y = self.db.triangles.reputation_inc == None
+        unprocessed_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_2)
         return unprocessed_triangles
