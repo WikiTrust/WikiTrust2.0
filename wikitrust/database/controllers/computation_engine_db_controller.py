@@ -2,16 +2,14 @@ from pydal import DAL, Field
 from pydal.migrator import InDBMigrator
 from datetime import date
 from wikitrust.database.controllers.create_entry import create_entry  as create
+import wikitrust.database.db_schema as db_schema
 from wikitrust.database.controllers.db_wrappers import autocommit
 import logging 
 
 class computation_engine_db_controller: 
-    def __init__(self, db_, create_ = None):
-        self.db = db_
-        if(create_ == None):
-            self.create = create(db_)
-        else:
-            self.create = create_
+    def __init__(self, uri = 'sqlite://storage.sqlite'):
+        self.db = db_schema.connect_to_db(uri)
+        self.create = create(self.db)
 
     def populate_prev_rev(self, page_id):
         all_revs = self.db(self.db.revision.page_id == page_id).iterselect(orderby=self.db.revision.rev_id)
