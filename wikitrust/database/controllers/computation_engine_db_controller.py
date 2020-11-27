@@ -38,34 +38,52 @@ class computation_engine_db_controller:
         user_rep = self.db(x & y & z).select().first()
         return user_rep.reputation_value
 
-    def update_or_insert_triangle(self, version, page_id, rev_1, rev_2, rev_3, rep = 0):
+    #return unique id
+    #update text Distances 1 - 2, 2 - 3, 1 - 3
+    def update_or_insert_triangle(self, version, page_id, revs, distances, rep = None):
         v = self.db.triangles.version == version
         w = self.db.triangles.page_id == page_id
-        x = self.db.triangles.rev_id_1 == rev_1
-        y = self.db.triangles.rev_id_2 == rev_2
-        z = self.db.triangles.rev_id_3 == rev_3
-        triangle = self.db(v & w & x & y & z).select().first()
+        x = self.db.triangles.rev_id_1 == revs[0]
+        y = self.db.triangles.rev_id_2 == revs[1]
+        z = self.db.triangles.rev_id_3 == revs[2]
+        ret = triangle = self.db(v & w & x & y & z).select().first()
         if(triangle == None):
-            self.create.create_triangles(version, page_id, rev_1, rev_2, rev_3, rep)
+            ret = self.create.create_triangles(version, page_id, revs[0], revs[1], revs[2], rep).id
         else:
+            ret = ret.id
             triangle.reputation_inc = rep
             triangle.update_record()
             self.db.commit()
+        #rev 1 to rev 2 distance
+        self.create.create_text_distance(version, revs[0], revs[1], distances[0])
+        #rev 2 to rev 3 distance
+        self.create.create_text_distance(version, revs[1], revs[2], distances[1])
+        #rev 1 to rev 3 distance
+        self.create.create_text_distance(version, revs[0], revs[2], distances[2])
+        return ret
 
     #parameters: version, page_id
     #return all triangles in chronological order
     def get_all_triangles_chronological(self, version, page_id):
         x = self.db.triangles.page_id == page_id
         y = self.db.triangles.version == version
-        all_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_3)
-        return all_triangles
+        all_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_2)
+        return list(all_triangles)
     
     #parameters: page_id
     #return all revisions and if the text has been retrieved
     def get_all_revisions(self, page_id):
         x = self.db.revision.page_id == page_id
         all_revs = self.db(x).select(self.db.revision.rev_id, self.db.revision.text_retrieved).iterselect(orderby=self.db.revision.self.db.revision.rev_id)
-        return all_revs
+        return list(all_revs)
+
+    #parameters: revision_id
+    #return boolean corresponding to text_retrieved
+    def check_text_retrieved(self, rev_id):
+        x = self.db.revision.rev_id == rev_id
+        ret = self.db(x).select(self.db.revision.text_retrieved).first()
+        print(ret)
+        return ret
     
     #parameters: version, stage, page_id, revision
     #return 
@@ -85,9 +103,16 @@ class computation_engine_db_controller:
 
     #parameters: version, page_id
     #return: all unprocessed triangles, in chronological order, by third revision, for a given page
-    def get_all_unprocessed_triangles(self, version, page_id):
-        x = self.db.triangles.page_id == page_id
-        y = self.db.triangles.version == version
-        z = self.db.triangles.reputation_inc == None
-        unprocessed_triangles = self.db(x & y & z).iterselect(orderby=self.db.triangles.rev_id_3)
+    def get_all_unprocessed_triangles(self, version):
+        x = self.db.triangles.version == version
+        y = self.db.triangles.reputation_inc == None
+        unprocessed_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_2)
         return unprocessed_triangles
+    
+    #parameters: page_id
+    #return: environment
+    def get_environment_by_page_id(self, page_id):
+        x = self.db.page.page_id = page_id
+        return self.db(x).environment_id
+
+    #

@@ -18,8 +18,11 @@ class create_entry:
         environment_name = ''
     ):
         try:
-            ret = self.db.environment.insert(environment_name = environment_name)
-            return ret
+            env = self.db(self.db.environment.environment_name == environment_name)
+            if(env == None):
+                ret = self.db.environment.insert(environment_name = environment_name)
+                return ret
+            return env
         except: pass
 
     @autocommit
@@ -139,7 +142,7 @@ class create_entry:
         version = '',
         rev_id_1 = -1,
         rev_id_2 = -1,
-        distance = ''
+        distance = 0.0
     ):
         ret = self.db.text_distance.insert(version = version, rev_id_1 = rev_id_1, rev_id_2 = rev_id_2, distance = distance)
         return ret
