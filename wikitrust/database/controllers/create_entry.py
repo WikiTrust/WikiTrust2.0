@@ -126,7 +126,7 @@ class create_entry:
         rev_id_1 = -1,
         rev_id_2 = -1,
         rev_id_3 = -1,
-        reputation_inc = 0
+        reputation_inc = None
     ):
         ret = self.db.triangles.insert(version = version, page_id = page_id, rev_id_1 = rev_id_1, rev_id_2 = rev_id_2, rev_id_3 = rev_id_3, reputation_inc = reputation_inc)
         return ret
@@ -150,5 +150,12 @@ class create_entry:
         rev_id_2 = -1,
         distance = 0.0
     ):
-        ret = self.db.text_distance.insert(version = version, rev_id_1 = rev_id_1, rev_id_2 = rev_id_2, distance = distance)
-        return ret
+        x = self.db.text_distance.version == version
+        y = self.db.text_distance.rev_id_1 == rev_id_1
+        z = self.db.text_distance.rev_id_2 == rev_id_2
+        q = self.db(x & y & z).select().first()
+        if(q == None):
+            ret = self.db.text_distance.insert(version = version, rev_id_1 = rev_id_1, rev_id_2 = rev_id_2, distance = distance)
+            return ret
+        return q
+        
