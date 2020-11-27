@@ -18,7 +18,7 @@ class LocalStorageEngine(object):
         #Initialize a dictionary mapping page_id to a page_dictionary
         self.pages = {}
 
-    def store(self, page_id: int, version_id: str, rev_id: int, text: str, timestamp: datetime.datetime):
+    def store(self, version_id: str, page_id: int, rev_id: int, text: str, timestamp: datetime.datetime):
         """Writes to the store.
         :param page_id: id of page (or in general, of compression space)
         :param version_id: id of the version we are writing.
@@ -34,7 +34,7 @@ class LocalStorageEngine(object):
         self.pages[page_id][rev_id] = text
 
 
-    def read(self, page_id: int, version_id: str, rev_id: int) -> str:
+    def read(self, version_id: str, page_id: int, rev_id: int) -> str:
         """
         Reads from the text storage.
         :param page_id: id of page (or in general, of compression space)
@@ -48,7 +48,7 @@ class LocalStorageEngine(object):
         return self.pages[page_id][rev_id]
 
 
-    def flush(self, page_id: int, version_id: str):
+    def flush(self, version_id: str, page_id: int):
         """Writes all remaining changes to the given page_id and version_id."""
         pass
 

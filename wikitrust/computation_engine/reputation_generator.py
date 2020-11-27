@@ -5,12 +5,11 @@ from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 class ReputationGenerator:
-    def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, scaling_const, scaling_func):
+    def __init__(self, dbcontroller, algorithm_ver, params):
         self.dbcontroller = dbcontroller
-        self.text_storage_engine = text_storage_engine
         self.algorithm_ver = algorithm_ver
-        self.scaling_const = scaling_const
-        self.scaling_func = scaling_func
+        self.scaling_const = params[0]
+        self.scaling_func = params[1]
 
     def update_author_reputation(self):
         unprocessed_triangles = self.dbcontroller.get_all_unprocessed_triangles(self.algorithm_ver)
@@ -33,6 +32,10 @@ class ReputationGenerator:
             reference_judged_dis = distance_info[0]
             judged_new_dis = distance_info[1]
             reference_new_dis = distance_info[2]
+
+            #Get env information
+            env_id = self.dbcontroller.get_environment_by_page_id()
+            
 
             # Checks that the authors of the judged and reference version are not the same
             if reference_author_id == judged_author_id:

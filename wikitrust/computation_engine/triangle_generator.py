@@ -11,13 +11,13 @@ from pydal import DAL, Field
 from wikitrust_lib.text_diff.edit import Edit
 
 class TriangleGenerator:
-    def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, max_judge_dist, text_diff_function, index_function):
+    def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, params):
         self.dbcontroller = dbcontroller
         self.text_storage_engine = text_storage_engine
         self.algorithm_ver = algorithm_ver
-        self.max_judge_dist = max_judge_dist
-        self.text_diff_function = text_diff_function
-        self.index_function = index_function
+        self.max_judge_dist = params[0]
+        self.text_diff_function = params[1]
+        self.index_function = params[2]
 
     def compute_triangles_batch(self, page_id):
         #Retrieves page revisions
@@ -37,7 +37,7 @@ class TriangleGenerator:
                 assert self.dbcontroller.check_text_retrieved(reference_revision_id)
 
                 #Populates reference_revision_text with current text for use in next iteration
-                reference_revision_text = self.text_storage_engine.read(page_id, self.algorithm_ver, reference_revision_id)
+                reference_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, reference_revision_id)
 
                 #Skip to next rev_iter
                 continue
@@ -48,7 +48,7 @@ class TriangleGenerator:
             assert self.dbcontroller.check_text_retrieved(judged_revision_id)
 
             #Get revision text for current (judged) revision
-            judged_revision_text = self.text_storage_engine.read(page_id, self.algorithm_ver, judged_revision_id)
+            judged_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, judged_revision_id)
 
             #Computes edit distance between reference and current once
             reference_current_distance = self.compute_edit_distance(reference_revision_text, judged_revision_text)
@@ -60,7 +60,7 @@ class TriangleGenerator:
                 assert self.dbcontroller.check_text_retrieved(new_revision_id)
 
                 #Get revision text for new revision
-                new_revision_text = self.text_storage_engine.read(page_id, self.algorithm_ver, new_rev_iter)
+                new_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, new_rev_iter)
 
 
                 reference_new_distance = self.compute_edit_distance(reference_revision_text, new_revision_text)
