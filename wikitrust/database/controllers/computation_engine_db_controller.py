@@ -23,7 +23,7 @@ class computation_engine_db_controller:
             prev2 = prev.rev_id
         print("Previous Revision Field Populated")
     
-    #parameters: parameters rev_id
+    #parameters: rev_id
     #return previous revision id
     def get_prev_rev(self, rev_id):
         rev = self.db(self.db.revision.rev_id == rev_id).select().first()
@@ -82,3 +82,12 @@ class computation_engine_db_controller:
             rev_log.update_record()
             self.db.commit()
         return rev_log
+
+    #parameters: version, page_id
+    #return: all unprocessed triangles, in chronological order, by third revision, for a given page
+    def get_all_unprocessed_triangles(self, version, page_id):
+        x = self.db.triangles.page_id == page_id
+        y = self.db.triangles.version == version
+        z = self.db.triangles.reputation_inc == None
+        unprocessed_triangles = self.db(x & y & z).iterselect(orderby=self.db.triangles.rev_id_3)
+        return unprocessed_triangles
