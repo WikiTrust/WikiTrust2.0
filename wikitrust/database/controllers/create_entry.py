@@ -1,4 +1,5 @@
 from pydal import DAL, Field
+
 from datetime import date
 from wikitrust.database.controllers.db_wrappers import autocommit
 """
@@ -18,12 +19,11 @@ class create_entry:
         environment_name = ''
     ):
         try:
-            env = self.db(self.db.environment.environment_name == environment_name)
-            if(env == None):
-                ret = self.db.environment.insert(environment_name = environment_name)
-                return ret
+            env = self.db.environment.insert(environment_name = environment_name)
             return env
-        except: pass
+        except:
+            self.db.rollback()
+            return self.db(self.db.environment.environment_name == environment_name).select(self.db.environment.id).first()
 
     @autocommit
     def create_page(
@@ -36,8 +36,9 @@ class create_entry:
         try:
             ret = self.db.page.insert(page_id = page_id, environment_id = environment_id, page_title = page_title, last_check_time = last_check_time)
             return ret
-        except: pass
-
+        except:
+            self.db.rollback()
+            return self.db(self.db.page.page_id == page_id).select(self.db.page.id).first()
     @autocommit
     def create_user(
         self, 
@@ -47,7 +48,10 @@ class create_entry:
         try:
             ret = self.db.user.insert(user_id = user_id, user_name = user_name)
             return ret
-        except: pass
+        except:
+            self.db.rollback()
+            return self.db(self.db.user.user_id == user_id).select(self.db.user.id).first()
+
 
     @autocommit
     def create_revision(
@@ -64,7 +68,9 @@ class create_entry:
         try:
             ret = self.db.revision.insert(rev_id = rev_id, page_id = page_id, user_id = user_id, rev_date = rev_date, prev_rev = prev_rev, text_retrieved = text_retrieved, last_attempt_date = last_attempt_date, num_attempts = num_attempts)
             return ret
-        except: pass
+        except:
+            self.db.rollback()
+            return self.db(self.db.revision.rev_id == rev_id).select(self.db.revision.id).first()
 
     @autocommit
     def create_revision_log(
