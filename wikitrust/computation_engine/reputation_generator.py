@@ -5,8 +5,8 @@ from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 class ReputationGenerator:
-    def __init__(self, db, text_storage_engine, algorithm_ver, scaling_const, scaling_func):
-        self.db = db
+    def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, scaling_const, scaling_func):
+        self.dbcontroller = dbcontroller
         self.text_storage_engine = text_storage_engine
         self.algorithm_ver = algorithm_ver
         self.scaling_const = scaling_const
@@ -14,10 +14,9 @@ class ReputationGenerator:
 
     def update_author_reputation(self):
         #Maps class variables to shorter local variables
-        db = self.db
         storage_engine = self.text_storage_engine
 
-        new_triangles = db(db.triangles.reputation_inc == None).iterselect(orderby=db.triangles.judged_revision)
+        new_triangles = self.dbcontroller.get_all_triangles_chronological(algorithm_ver, )# TALK TO LUKE TO REMOVE PAGE_ID PARAM
 
         for triangle_iter in range(len(new_triangles)):
             target_triangle = new_triangles[triangle_iter]
@@ -45,7 +44,7 @@ class ReputationGenerator:
                 triangle_quality = (triangle_json["distances"][1] - triangle_json["distances"][2]) \
                                    /(triangle_json["distances"][0])
 
-                new_author_reputation = db(db.user_reputation.user == new_author).select()[0]
+                new_author_reputation = db(db.user_reputation.user == new_author).select()[0]# TALK TO LUKE TO ADD UPDATE REP CONTROLLER FUNC
 
                 # Computes reputation change to be applied to judged version's author
                 reputation_change =  self.scaling_const\

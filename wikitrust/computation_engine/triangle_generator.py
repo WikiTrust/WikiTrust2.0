@@ -11,8 +11,8 @@ from pydal import DAL, Field
 from wikitrust_lib.text_diff.edit import Edit
 
 class TriangleGenerator:
-    def __init__(self, db, text_storage_engine, algorithm_ver, max_judge_dist, text_diff_function, index_function):
-        self.db = db
+    def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, max_judge_dist, text_diff_function, index_function):
+        self.dbcontroller = dbcontroller
         self.text_storage_engine = text_storage_engine
         self.algorithm_ver = algorithm_ver
         self.max_judge_dist = max_judge_dist
@@ -21,11 +21,10 @@ class TriangleGenerator:
 
     def compute_triangles_batch(self, page_id):
         #Maps class variables to shorter local variables
-        db = self.db
         storage_engine = self.text_storage_engine
 
         #Retrieves page revisions
-        page_revs = db(db.revision.page_id == page_id).iterselect(orderby=db.revision.page_id)
+        page_revs = self.dbcontroller.get_all_revisions(page_id)
 
         # Rolls over current revision into reference revision, initialized to none
         reference_revision_text = None
@@ -71,24 +70,9 @@ class TriangleGenerator:
 
                 triangle_json = json.dumps(triangle_dict)
 
-                db.triangles.update_or_insert((db.triangles.page == page_id) &
-                                            (db.triangles.algorithm == self.algorithm_ver) &
-                                            (db.triangles.judged_revision == judged_revision_id) &
-                                            (db.triangles.new_revision == new_revision_id),
-                                            page=page_id, \
-                                            algorithm=self.algorithm_ver, \
-                                            info=str(triangle_json), \
-                                            judged_revision=judged_revision_id, \
-                                            new_revision=new_revision_id, \
-                                            reputation_inc=None)
+                self.dbcontroller.update_or_insert_triangle(self.algorithm_ver, page_id, reference_revision_id, judged_revision_id, new_revision_id)
 
-            db.revision_log.update_or_insert((db.revision_log.page == page_id) & \
-                                             (db.revision_log.algorithm == self.algorithm_ver), \
-                                            page=page_id, \
-                                            algorithm=self.algorithm_ver, \
-                                            last_revision=judged_revision_id, \
-                                            lock_date=datetime.date.today() \
-                                            )
+            self.dbcontroller.update_revision_log(self.algorithm_ver, page_id, judged_revision_id)
 
             #Rolls over current revision variables into reference revision variables
             reference_revision_id = judged_revision_id
