@@ -135,5 +135,26 @@ class computation_engine_db_controller:
     # (rev1,rev2,rev3),(user_id1,...,...),(distance 1-2, distance 2-3, distance 1-3)
     def get_triangle_info(self, id):
         triangle = self.db(self.db.triangles.id == id).select().first()
-        rev_tup = (triangle.rev_id_1,triangle.rev_id_2,triangle.rev_id_3)
-        user1 = self.db(self.db.user)
+        rev_tuple = (triangle.rev_id_1,triangle.rev_id_2,triangle.rev_id_3)
+
+        user_1 = self.db(self.db.revision.rev_id == rev_tuple[0]).select(self.db.revision.user_id).first().user_id
+        user_2 = self.db(self.db.revision.rev_id == rev_tuple[1]).select(self.db.revision.user_id).first().user_id
+        user_3 = self.db(self.db.revision.rev_id == rev_tuple[2]).select(self.db.revision.user_id).first().user_id
+        user_tuple = (user_1,user_2,user_3)
+
+        distance_1_q = self.db.text_distance.rev_id_1 == rev_tuple[0] & self.db.text_distance.rev_id_2 == rev_tuple[1]
+        distance_2_q = self.db.text_distance.rev_id_1 == rev_tuple[1] & self.db.text_distance.rev_id_2 == rev_tuple[2]
+        distance_3_q = self.db.text_distance.rev_id_1 == rev_tuple[0] & self.db.text_distance.rev_id_2 == rev_tuple[2]
+        distance_1 = self.db(distance_1_q).select(self.db.text_distance.distance).first().distance
+        distance_2 = self.db(distance_2_q).select(self.db.text_distance.distance).first().distance
+        distance_3 = self.db(distance_3_q).select(self.db.text_distance.distance).first().distance
+        distance_tuple = (distance_1, distance_2, distance_3)
+
+        info = (rev_tuple, user_tuple, distance_tuple)
+        return info
+
+    #parameters: rev_id
+    #return: page_id
+    def get_page_from_rev(self, rev_id):
+        x = self.db.revision.rev_id == rev_id
+        return self.db(x).select(self.db.revision.page_id).first().page_id
