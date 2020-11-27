@@ -20,9 +20,6 @@ class TriangleGenerator:
         self.index_function = index_function
 
     def compute_triangles_batch(self, page_id):
-        #Maps class variables to shorter local variables
-        storage_engine = self.text_storage_engine
-
         #Retrieves page revisions
         page_revs = self.dbcontroller.get_all_revisions(page_id)
 
@@ -36,11 +33,10 @@ class TriangleGenerator:
             if rev_num == 0:
                 #Checks that we have access to the reference text, add advanced error handling later
                 assert(page_revs[rev_num-1].text_retrieved == True)
+
                 #Populates reference_revision_text with current text for use in next iteration
-                reference_revision_id = page_revs[rev_num].revision_id
-                reference_revision_blob = page_revs[rev_num].revision_blob
-                reference_revision_text = storage_engine.read(page_id, self.algorithm_ver, rev_num)
-                reference_revision_author = page_revs[rev_num].user_id
+                reference_revision_id = page_revs[rev_num]
+                reference_revision_text = self.text_storage_engine.read(page_id, self.algorithm_ver, rev_num)
 
             #Checks that we have access to the reference judged text, add advanced error handling later
             assert(page_revs[rev_num].text_retrieved == True)
@@ -48,7 +44,7 @@ class TriangleGenerator:
             #Get revision text for current (judged) revision
             judged_revision_id = page_revs[rev_num].revision_id
             judged_revision_blob = page_revs[rev_num].revision_blob
-            judged_revision_text = storage_engine.read(page_id, self.algorithm_ver, rev_num)
+            judged_revision_text = self.text_storage_engine.read(page_id, self.algorithm_ver, rev_num)
             judged_revision_author = page_revs[rev_num].user_id
 
             #Computes edit distance between reference and current once
@@ -58,7 +54,7 @@ class TriangleGenerator:
                 #Get revision text for new revision
                 new_revision_id = page_revs[new_rev_num].revision_id
                 new_revision_blob = page_revs[new_rev_num].revision_blob
-                new_revision_text = storage_engine.read(page_id, self.algorithm_ver, new_rev_num)
+                new_revision_text = self.text_storage_engine.read(page_id, self.algorithm_ver, new_rev_num)
                 new_revision_author = page_revs[new_rev_num].user_id
 
                 reference_new_distance = self.compute_edit_distance(reference_revision_text, new_revision_text)

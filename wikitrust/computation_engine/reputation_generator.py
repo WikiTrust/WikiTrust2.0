@@ -16,7 +16,7 @@ class ReputationGenerator:
         #Maps class variables to shorter local variables
         storage_engine = self.text_storage_engine
 
-        new_triangles = self.dbcontroller.get_all_triangles_chronological(algorithm_ver, )# TALK TO LUKE TO REMOVE PAGE_ID PARAM
+        new_triangles = self.dbcontroller.get_all_unprocessed_triangles(self.algorithm_ver)
 
         for triangle_iter in range(len(new_triangles)):
             target_triangle = new_triangles[triangle_iter]
@@ -44,7 +44,7 @@ class ReputationGenerator:
                 triangle_quality = (triangle_json["distances"][1] - triangle_json["distances"][2]) \
                                    /(triangle_json["distances"][0])
 
-                new_author_reputation = db(db.user_reputation.user == new_author).select()[0]# TALK TO LUKE TO ADD UPDATE REP CONTROLLER FUNC
+                new_author_reputation = self.dbcontroller.get_reputation(self.algorithm_ver, new_author)
 
                 # Computes reputation change to be applied to judged version's author
                 reputation_change =  self.scaling_const\
