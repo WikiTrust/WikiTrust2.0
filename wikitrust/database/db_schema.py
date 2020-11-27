@@ -33,7 +33,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # is shared between them.
             'environment',
             # Plain text name for the environment.
-            Field('environment_name')
+            Field('environment_name', unique = True)
         )
     except: 
         logging.debug(traceback.format_exc())
