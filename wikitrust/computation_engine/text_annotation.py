@@ -69,7 +69,7 @@ class ReputationGenerator:
 
         new_trust = [word.trust for word in new_version.word_list]
 
-        new_json = {"trust_list": new_trust}
+        new_json = json.dumps({"trust_list": new_trust})
 
         #Store new json in trust storage engine
         self.trust_storage_engine.store(self.algorithm_ver, page_id, rev_id, new_json, datetime.now())

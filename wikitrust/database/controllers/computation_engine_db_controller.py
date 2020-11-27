@@ -4,7 +4,7 @@ from datetime import date
 from wikitrust.database.controllers.create_entry import create_entry  as create
 from wikitrust.database.controllers.db_wrappers import autocommit
 
-class computation_engine_db_controller: 
+class computation_engine_db_controller:
     def __init__(self, db_, create_ = None):
         self.db = db_
         if(create_ == None):
