@@ -13,23 +13,29 @@ class ReputationGenerator:
         self.scaling_func = scaling_func
 
     def update_author_reputation(self):
-        #Maps class variables to shorter local variables
-        storage_engine = self.text_storage_engine
+        unprocessed_triangles = self.dbcontroller.get_all_unprocessed_triangles(self.algorithm_ver)
 
-        new_triangles = self.dbcontroller.get_all_unprocessed_triangles(self.algorithm_ver)
+        for target_triangle in unprocessed_triangles:
+            triangle_info = self.dbcontroller.get_triangle_info(target_triangle)
 
-        for triangle_iter in range(len(new_triangles)):
-            target_triangle = new_triangles[triangle_iter]
+            rev_info = triangle_info[0]
+            author_info = triangle_info[1]
+            distance_info = triangle_info[2]
 
-            # Unpacks triangle JSON
-            triangle_json = json.loads(target_triangle.info)
+            reference_rev_id = rev_info[0]
+            judged_rev_id = rev_info[1]
+            new_rev_id = rev_info[2]
+
+            reference_author_id = author_info[0]
+            judged_author_id = author_info[1]
+            new_author_id = author_info[2]
+
+            reference_judged_dis = distance_info[0]
+            judged_new_dis = distance_info[1]
+            reference_new_dis = distance_info[2]
 
             # Checks that the authors of the judged and reference version are not the same
-            reference_author = triangle_json["authors"][0]
-            judged_author = triangle_json["authors"][1]
-            new_author = triangle_json["authors"][2]
-
-            if reference_author == judged_author:
+            if reference_author_id == judged_author_id:
                 # Same author, so no reputation change
 
                 target_triangle.update(reputation_inc=0)
@@ -37,20 +43,17 @@ class ReputationGenerator:
             else:
                 # Different author, so reputation change applies
 
-                # Retrieves needed information from json
-                reference_judged_distance = triangle_json["distances"][0]
-
                 #Calculates triangle_quality from triangle distances
-                triangle_quality = (triangle_json["distances"][1] - triangle_json["distances"][2]) \
-                                   /(triangle_json["distances"][0])
+                triangle_quality = (judged_new_dis- reference_new_dis) \
+                                   /reference_judged_dis
 
-                new_author_reputation = self.dbcontroller.get_reputation(self.algorithm_ver, new_author)
+                new_author_reputation = self.dbcontroller.get_reputation(self.algorithm_ver, new_author_id)
 
                 # Computes reputation change to be applied to judged version's author
-                reputation_change =  self.scaling_const\
-                    * reference_judged_distance \
+                reputation_change =  self.scaling_const \
+                    * reference_judged_dis \
                     * triangle_quality\
                     * self.scaling_func(new_author_reputation)
 
                 # Updates triangle with reputation change
-                target_triangle.update(reputation_inc=reputation_change)
+                self.dbcontroller.update_triangle_rep(target_triangle, reputation_change)
