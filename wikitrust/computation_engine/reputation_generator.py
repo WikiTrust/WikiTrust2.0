@@ -34,8 +34,8 @@ class ReputationGenerator:
             reference_new_dis = distance_info[2]
 
             #Get env information
-            env_id = self.dbcontroller.get_environment_by_page_id()
-            
+            page_id = self.dbcontroller.get_page_from_rev(judged_rev_id)
+            env_id = self.dbcontroller.get_environment_by_page_id(page_id)
 
             # Checks that the authors of the judged and reference version are not the same
             if reference_author_id == judged_author_id:
@@ -50,7 +50,7 @@ class ReputationGenerator:
                 triangle_quality = (judged_new_dis- reference_new_dis) \
                                    /reference_judged_dis
 
-                new_author_reputation = self.dbcontroller.get_reputation(self.algorithm_ver, new_author_id)
+                new_author_reputation = self.dbcontroller.get_reputation(self.algorithm_ver, new_author_id, env_id)
 
                 # Computes reputation change to be applied to judged version's author
                 reputation_change =  self.scaling_const \
@@ -60,3 +60,8 @@ class ReputationGenerator:
 
                 # Updates triangle with reputation change
                 self.dbcontroller.update_triangle_rep(target_triangle, reputation_change)
+
+                # Change reputation of judged author
+                old_judged_rep = self.dbcontroller.get_reputation(self.algorithm_ver, judged_author_id, env_id)
+                new_judged_rep = old_judged_rep + reputation_change
+                self.dbcontroller.set_reputation(self.algorithm_ver, judged_author_id, env_id, new_judged_rep)

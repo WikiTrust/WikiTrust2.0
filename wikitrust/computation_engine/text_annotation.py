@@ -36,6 +36,7 @@ class ReputationGenerator:
         """
 
         page_id = self.dbcontroller.get_page_from_rev(rev_id)
+        env_id = self.dbcontroller.get_environment_by_page_id(page_id)
 
         # Get previous revision and it's annotated text trust
         prev_rev_id = self.dbcontroller.get_prev_rev(rev_id)
@@ -53,7 +54,7 @@ class ReputationGenerator:
 
         #Gets author reputation
         new_rev_author_id = self.dbcontroller.get_user_from_rev(rev_id)
-        author_rep = self.dbcontroller.get_reputation(self.algorithm_ver, new_rev_author_id)
+        author_rep = self.dbcontroller.get_reputation(self.algorithm_ver, new_rev_author_id, env_id)
 
         #Get Edits from previous to new revision
         edit_index= self.index_function(new_text_vals)
