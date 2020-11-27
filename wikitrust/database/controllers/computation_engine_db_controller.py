@@ -3,6 +3,7 @@ from pydal.migrator import InDBMigrator
 from datetime import date
 from wikitrust.database.controllers.create_entry import create_entry  as create
 from wikitrust.database.controllers.db_wrappers import autocommit
+import logging 
 
 class computation_engine_db_controller: 
     def __init__(self, db_, create_ = None):
@@ -36,8 +37,23 @@ class computation_engine_db_controller:
         x = self.db.user_reputation.version == version
         y = self.db.user_reputation.user_id == user_id
         z = self.db.user_reputation.environment == env
-        user_rep = self.db(x & y & z).select(self.db.user_reputation.reputation_value).first()
-        return user_rep.reputation_value
+        user_rep = self.db(x & y & z).select(self.db.user_reputation.reputation_value)
+        if(len(user_rep) > 1)
+            logging.error("MORE THAN ONE USER FOUND WHEN USING get_reputation")
+        user_rep = .first().reputation_value
+        return user_rep
+
+    #parameters: version, user_id, env, reputation
+    #return user id
+    def set_reputation(self, version, user_id, env, rep):
+        x = self.db.user_reputation.version == version
+        y = self.db.user_reputation.user_id == user_id
+        z = self.db.user_reputation.environment == env
+        user_rep = self.db(x & y & z).select().first()
+        user_rep.reputation_value = rep
+        user_rep.update_record()
+        self.db.commit()
+        return user_rep.user_id
 
     #return unique id
     #update text Distances 1 - 2, 2 - 3, 1 - 3
@@ -114,7 +130,7 @@ class computation_engine_db_controller:
             rev_log.lock_date = date.today()
             rev_log.update_record()
             self.db.commit()
-        return rev_log
+        return rev_log.id
 
     #parameters: version, page_id
     #return: all unprocessed triangles, in chronological order, by third revision, for a given page
