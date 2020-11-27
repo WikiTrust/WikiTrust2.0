@@ -28,7 +28,6 @@ class StorageEngine(object):
         """
         self.db = db
         self.db_table = database_table
-        #json_key = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
         json_key = "storage_engine/private/wikitrust-prod-643472bb33d3.json"
         self.client = storage.Client.from_service_account_json(json_key)
         self.bucket_name = bucket_name
@@ -43,7 +42,7 @@ class StorageEngine(object):
         pass
 
 
-    def store(self, page_id: int, version_id: str, rev_id: int, text: str, timestamp: datetime, kind: str):
+    def store(self, page_id: int, version_id: int, rev_id: int, text: str, timestamp: datetime, kind: str):
         """Writes to the store.
         :param page_id: id of page (or in general, of compression space)
         :param version_id: id of the version we are writing.
@@ -57,9 +56,14 @@ class StorageEngine(object):
             if rev_id is None:
                 print("Could not write revision: No rev_id")
                 return False
+            
+            query = (self.db_table.version == version_id) and (page_id == self.db_table.page_id) and (rev_id == self.db_table.rev_id)
+            blob_list = self.db(query).select(self.db_table.blob)
+            if blob_list != None and len(blob_list) > 0:
+                return False # Do not overwrite if a revision text with the givien version_id,page_id,rev_id exists
 
             if self.current_blob_name is None:
-                self.current_blob_name = str(rev_id) + "-" + version_id
+                self.current_blob_name = str(rev_id) + "-" + str(version_id)
                 
             self.db_table.insert(rev_id=rev_id, version=version_id, blob=self.current_blob_name, text_type=kind)
             self.db.commit()
@@ -72,7 +76,7 @@ class StorageEngine(object):
         return False
 
 
-    def read(self, page_id: int, version_id: str, rev_id: int, do_cache=True) -> str:
+    def read(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> str:
         """
         Reads from the text storage.
         :param page_id:
