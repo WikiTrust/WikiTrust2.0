@@ -9,6 +9,7 @@ from wikitrust.computation_engine.text_annotation import TextAnnotation
 import wikitrust.computation_engine.wikitrust_algorithms.text_diff.chdiff as chdiff
 
 import json
+import math
 
 
 __DBURI__ = "sqlite://Test.db"
@@ -46,7 +47,7 @@ def test_computation_engine():
 
     #Run Reputation generator
     print("Starting Reputation Generator...")
-    rg = ReputationGenerator(dbcontroller, __ALGORITHM_VER__, (1, (lambda x: x)))
+    rg = ReputationGenerator(dbcontroller, __ALGORITHM_VER__, (0.5, (lambda x: math.log(1.1 + x))))
     rg.update_author_reputation()
     print("Reputation Generator done\n")
 

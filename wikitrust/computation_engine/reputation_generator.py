@@ -49,7 +49,6 @@ class ReputationGenerator:
                 print("Reference Rev Id: ", reference_rev_id)
                 print("Judged Rev Id: ", judged_rev_id)
                 print("New Rev Id: ", new_rev_id)
-                print(reference_new_dis - judged_new_dis)
 
                 #Calculates triangle_quality from triangle distances
                 #ADDING 0.00001 TO AVOID DIVISION BY ZERO
@@ -58,16 +57,20 @@ class ReputationGenerator:
 
                 new_author_reputation = self.dbcontroller.get_reputation(self.algorithm_ver, new_author_id, env_id)
 
+                print("New Author Reputation: ", new_author_reputation)
+
                 # Computes reputation change to be applied to judged version's author
                 reputation_change =  self.scaling_const \
                     * reference_judged_dis \
                     * triangle_quality\
                     * self.scaling_func(new_author_reputation)
 
+                print("Reputation Change", reputation_change)
+
                 # Updates triangle with reputation change
                 self.dbcontroller.update_triangle_rep(target_triangle, reputation_change)
 
                 # Change reputation of judged author
                 old_judged_rep = self.dbcontroller.get_reputation(self.algorithm_ver, judged_author_id, env_id)
-                new_judged_rep = old_judged_rep + reputation_change
+                new_judged_rep = max(old_judged_rep + reputation_change, 0)
                 self.dbcontroller.set_reputation(self.algorithm_ver, judged_author_id, env_id, new_judged_rep)
