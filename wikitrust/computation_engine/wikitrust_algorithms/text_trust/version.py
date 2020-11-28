@@ -108,6 +108,8 @@ class Version:
 
         new_version.word_list = word_list
 
+        return new_version
+
 
     @classmethod
     def create_next_version(cls, prev_version: "Version", new_text: List[str], \

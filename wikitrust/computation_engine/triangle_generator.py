@@ -38,7 +38,7 @@ class TriangleGenerator:
                 assert self.dbcontroller.check_text_retrieved(reference_revision_id)
 
                 #Populates reference_revision_text with current text for use in next iteration
-                reference_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, reference_revision_id)
+                reference_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, reference_revision_id))
 
                 #Skip to next rev_iter
                 continue
@@ -49,7 +49,7 @@ class TriangleGenerator:
             assert self.dbcontroller.check_text_retrieved(judged_revision_id)
 
             #Get revision text for current (judged) revision
-            judged_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, judged_revision_id)
+            judged_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, judged_revision_id))
 
             #Computes edit distance between reference and current once
             reference_current_distance = self.compute_edit_distance(reference_revision_text, judged_revision_text)
@@ -61,7 +61,7 @@ class TriangleGenerator:
                 assert self.dbcontroller.check_text_retrieved(new_revision_id)
 
                 #Get revision text for new revision
-                new_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, new_revision_id)
+                new_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, new_revision_id))
 
 
                 reference_new_distance = self.compute_edit_distance(reference_revision_text, new_revision_text)
@@ -88,8 +88,8 @@ class TriangleGenerator:
         """
 
         #Gets list of tuples representings edits
-        split_text_1: List[str] = rev_1_text.split()
-        split_text_2: List[str] = rev_2_text.split()
+        split_text_1: List[str] = rev_1_text
+        split_text_2: List[str] = rev_2_text
         edit_index: Dict[Tuple[str, str], List[int]] = self.index_function(split_text_2)
         edit_list_tuples: List[Tuple[int, int, int, int]] = self.text_diff_function(split_text_1, split_text_2, edit_index)
 

@@ -53,6 +53,6 @@ def test_computation_engine():
     #Run Text Annotation on each revision
     print("Running Text Annotation...")
     ta = TextAnnotation(dbcontroller, text_storage_engine, trust_storage_engine, __ALGORITHM_VER__, (0.5, 0.5, 5, chdiff.edit_diff_greedy, chdiff.make_index2))
-    for revision in revision_list:
+    for revision in sorted(revision_list):
         ta.compute_revision_trust(revision)
     print("Text Annotation done \n")

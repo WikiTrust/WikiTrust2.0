@@ -25,8 +25,8 @@ class TextAnnotation:
         self.revision_const             = params[1]
         self.edge_effect_const          = params[2]
         self.constants                  = (params[0], params[1], params[2])
-        self.text_diff_function         = params[4]
-        self.index_function             = params[5]
+        self.text_diff_function         = params[3]
+        self.index_function             = params[4]
 
 
     def compute_revision_trust(self, rev_id):
@@ -41,16 +41,18 @@ class TextAnnotation:
         # Get previous revision and it's annotated text trust
         prev_rev_id = self.dbcontroller.get_prev_rev(rev_id)
 
-        # Get previous text and trust values
-        prev_text_json = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, prev_rev_id))
-        prev_text_vals = prev_text_json["text_list"]
+        if prev_rev_id == None:
+            #First revision, so previous text and trust lists are empty
+            prev_text_vals = []
+            prev_trust_vals = []
+        else:
+            # Get previous text and trust values from storage engine
+            prev_text_vals = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, prev_rev_id))
 
-        prev_trust_json = json.loads(self.trust_storage_engine.read(prev_rev_id, self.algorithm_ver))
-        previus_trust_vals = prev_trust_json["trust_list"]
+            prev_trust_vals = json.loads(self.trust_storage_engine.read(self.algorithm_ver, page_id, prev_rev_id))
 
         #Gets new text from storage engine
-        new_text_json = self.text_storage_engine.read(self.algorithm_ver, page_id, rev_id).split()
-        new_text_vals = new_text_json["text_list"]
+        new_text_vals = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, rev_id))
 
         #Gets author reputation
         new_rev_author_id = self.dbcontroller.get_user_from_rev(rev_id)
@@ -63,15 +65,15 @@ class TextAnnotation:
         #Converts list of tuples to list of Edits
         edit_list = [Edit.edit_tuple_constructor(edit_tuple) for edit_tuple in edit_list_tuples]
 
-        prev_version = Version.create_version(prev_text_vals, previus_trust_vals, author_rep, self.constants)
+        prev_version = Version.create_version(prev_text_vals, prev_trust_vals, author_rep, self.constants)
 
         new_version = Version.create_next_version(prev_version, new_text_vals, edit_list, author_rep)
 
         new_trust = [word.trust for word in new_version.word_list]
 
-        new_json = json.dumps({"trust_list": new_trust})
+        new_json = json.dumps(new_trust)
 
         #Store new json in trust storage engine
         self.trust_storage_engine.store(self.algorithm_ver, page_id, rev_id, new_json, datetime.now())
 
-        self.trust_storage_engine.flush(page_id)
+        self.trust_storage_engine.flush(self.algorithm_ver, page_id)

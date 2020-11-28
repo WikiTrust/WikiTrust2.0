@@ -52,16 +52,16 @@ class LocalStorageEngine(object):
         """Writes all remaining changes to the given page_id and version_id."""
         pass
 
-def load_page_json_into_storage(storage_engine, json):
+def load_page_json_into_storage(storage_engine, input_json):
     """
     Takes a JSON object containing information about a Wikipedia page and loads it into the storage engine.
     """
-    page_id = int(json["pageId"])
+    page_id = int(input_json["pageId"])
 
-    for rev_iter in range(int(json["size"])):
-        rev_id = json["revisions"][rev_iter]["revisionId"]
-        rev_text = json["revisions"][rev_iter]["text"]
-        storage_engine.store("DUMMY_VERSION", page_id, rev_id, rev_text, datetime.datetime.now())
+    for rev_iter in range(int(input_json["size"])):
+        rev_id = input_json["revisions"][rev_iter]["revisionId"]
+        rev_text = input_json["revisions"][rev_iter]["text"]
+        storage_engine.store("DUMMY_VERSION", page_id, rev_id, json.dumps(rev_text.split()), datetime.datetime.now())
 
 if __name__ == '__main__':
     """ 
