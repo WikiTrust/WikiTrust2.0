@@ -23,7 +23,7 @@ def test_computation_engine():
     # Initialize local text storage engine
     text_storage_engine = local_storage_engine.LocalStorageEngine(db = None)
 
-    with open(__PAGEJSON__) as json_file:
+    with open(__PAGEJSON__, encoding="utf-8") as json_file:
         json_object = json.load(json_file)
         local_storage_engine.load_page_json_into_storage(text_storage_engine, json_object)
 

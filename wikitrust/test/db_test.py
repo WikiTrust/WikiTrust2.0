@@ -3,8 +3,10 @@ from wikitrust.database.controllers.computation_engine_db_controller import comp
 import json
 
 def drop_tables(db): 
+    print(db.tables())
     for table_name in db.tables():
         db[table_name].drop()
+        print(table_name + "dropped")
     db.commit()
 #return controller
 def drop_and_populate(uri='sqlite://storage.sqlite'):
