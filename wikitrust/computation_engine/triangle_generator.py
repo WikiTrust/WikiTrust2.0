@@ -28,6 +28,7 @@ class TriangleGenerator:
         reference_revision_author = None
 
         for rev_iter in range(len(page_revs)):
+            print(rev_iter)
             # If this is the first revision, there is no reference revision so we cannot judge it.
             # We will however, populate reference_revision_text
             if rev_iter == 0:
@@ -53,14 +54,14 @@ class TriangleGenerator:
             #Computes edit distance between reference and current once
             reference_current_distance = self.compute_edit_distance(reference_revision_text, judged_revision_text)
 
-            for new_rev_iter in range(rev_iter + 1, max(rev_iter + self.max_judge_dist, len(page_revs))):
+            for new_rev_iter in range(rev_iter + 1, min(rev_iter + self.max_judge_dist, len(page_revs))):
                 new_revision_id = page_revs[new_rev_iter]
 
                 #Checks that we have access to the reference text, add advanced error handling later
                 assert self.dbcontroller.check_text_retrieved(new_revision_id)
 
                 #Get revision text for new revision
-                new_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, new_rev_iter)
+                new_revision_text = self.text_storage_engine.read(self.algorithm_ver, page_id, new_revision_id)
 
 
                 reference_new_distance = self.compute_edit_distance(reference_revision_text, new_revision_text)
@@ -69,9 +70,9 @@ class TriangleGenerator:
                 revision_ids = (reference_revision_id, judged_revision_id, new_revision_id)
                 distances = (reference_current_distance, reference_new_distance, current_new_distance)
 
-                self.dbcontroller.create(self.algorithm_ver, page_id, revision_ids, distances)
+                self.dbcontroller.create_triangle(self.algorithm_ver, page_id, revision_ids, distances)
 
-            self.dbcontroller.update_revision_log(self.algorithm_ver, page_id, judged_revision_id)
+            self.dbcontroller.update_revision_log(self.algorithm_ver, "TriangleGenerator", page_id, judged_revision_id)
 
             #Rolls over current revision variables into reference revision variables
             reference_revision_id = judged_revision_id
@@ -87,8 +88,8 @@ class TriangleGenerator:
         """
 
         #Gets list of tuples representings edits
-        split_text_1: List[str] = rev_1_text.text.split()
-        split_text_2: List[str] = rev_2_text.text.split()
+        split_text_1: List[str] = rev_1_text.split()
+        split_text_2: List[str] = rev_2_text.split()
         edit_index: Dict[Tuple[str, str], List[int]] = self.index_function(split_text_2)
         edit_list_tuples: List[Tuple[int, int, int, int]] = self.text_diff_function(split_text_1, split_text_2, edit_index)
 

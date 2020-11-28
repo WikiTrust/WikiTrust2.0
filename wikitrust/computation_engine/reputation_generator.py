@@ -41,7 +41,7 @@ class ReputationGenerator:
             if reference_author_id == judged_author_id:
                 # Same author, so no reputation change
 
-                target_triangle.update(reputation_inc=0)
+                self.dbcontroller.update_triangle_rep(target_triangle, 0)
 
             else:
                 # Different author, so reputation change applies

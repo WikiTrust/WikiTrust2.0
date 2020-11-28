@@ -27,6 +27,8 @@ def test_computation_engine():
         json_object = json.load(json_file)
         local_storage_engine.load_page_json_into_storage(text_storage_engine, json_object)
 
+    revision_list = text_storage_engine.pages[__PAGEID__].keys()
+
     print("Local Text Storage Engine initialized...")
 
     # Initialize local trust storage engine
@@ -34,13 +36,23 @@ def test_computation_engine():
 
     print("Local Trust Storage Engine initialized...")
 
+    print()
+
     #Run Triangle generator
-    tg = TriangleGenerator(dbcontroller, text_storage_engine, __ALGORITHM_VER__, (10, chdiff.edit_diff_greedy, chdiff.make_index2))
+    print("Starting Triangle Generator...")
+    tg = TriangleGenerator(dbcontroller, text_storage_engine, __ALGORITHM_VER__, (3, chdiff.edit_diff_greedy, chdiff.make_index2))
     tg.compute_triangles_batch(__PAGEID__)
+    print("Triangle Generator done\n")
 
     #Run Reputation generator
+    print("Starting Reputation Generator...")
     rg = ReputationGenerator(dbcontroller, __ALGORITHM_VER__, (1, (lambda x: x)))
     rg.update_author_reputation()
+    print("Reputation Generator done\n")
 
     #Run Text Annotation on each revision
+    print("Running Text Annotation...")
     ta = TextAnnotation(dbcontroller, text_storage_engine, trust_storage_engine, __ALGORITHM_VER__, (0.5, 0.5, 5, chdiff.edit_diff_greedy, chdiff.make_index2))
+    for revision in revision_list:
+        ta.compute_revision_trust(revision)
+    print("Text Annotation done \n")

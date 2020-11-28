@@ -61,7 +61,7 @@ def load_page_json_into_storage(storage_engine, json):
     for rev_iter in range(int(json["size"])):
         rev_id = json["revisions"][rev_iter]["revisionId"]
         rev_text = json["revisions"][rev_iter]["text"]
-        storage_engine.store(page_id, "DUMMY_VERSION", rev_id, rev_text, datetime.datetime.now())
+        storage_engine.store("DUMMY_VERSION", page_id, rev_id, rev_text, datetime.datetime.now())
 
 if __name__ == '__main__':
     """ 
