@@ -9,6 +9,7 @@ def drop_tables(db):
 #return controller
 def drop_and_populate(uri='sqlite://storage.sqlite'):
     compu = comp(uri)
+    drop_tables(compu.db)
     populate(compu)
     return compu
 
