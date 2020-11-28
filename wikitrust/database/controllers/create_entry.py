@@ -61,7 +61,7 @@ class create_entry:
         user_id = -1, 
         rev_date = None, 
         prev_rev = -1, 
-        text_retrieved = 'F', 
+        text_retrieved = 'T', 
         last_attempt_date = None, 
         num_attempts = -1,
     ):
