@@ -95,7 +95,7 @@ class create_entry:
         version = '', 
         user_id = -1, 
         environment = None, 
-        reputation_value = 0
+        reputation_value = 1
     ):
         x = self.db.user_reputation.version == version
         y = self.db.user_reputation.user_id == user_id

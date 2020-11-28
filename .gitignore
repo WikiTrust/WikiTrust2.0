@@ -1,4 +1,5 @@
 *.pyc
+Test.db
 
 # ------- Secret Stuff (Keys etc...) ----------
 private/
