@@ -1,11 +1,11 @@
 import json
 from datetime import datetime
 
-from wikitrust_algorithms.text_trust.version import Version
-from wikitrust_algorithms.text_trust.version import Block
-from wikitrust_algorithms.text_trust.version import Word
+from wikitrust.computation_engine.wikitrust_algorithms.text_trust.version import Version
+from wikitrust.computation_engine.wikitrust_algorithms.text_trust.block import Block
+from wikitrust.computation_engine.wikitrust_algorithms.text_trust.word import Word
 
-from wikitrust_lib.text_diff.edit import Edit
+from wikitrust.computation_engine.wikitrust_algorithms.text_diff.edit import Edit
 
 __INITIAL_TRUST__ = 0
 
@@ -15,7 +15,7 @@ __EDGE_EFFECT_CONST__ = 2
 
 __CONSTANTS__ = (__TRUST_INHERITANCE_CONST__, __REVISION_CONST__, __EDGE_EFFECT_CONST__)
 
-class ReputationGenerator:
+class TextAnnotation:
     def __init__(self, dbcontroller, text_storage_engine, trust_storage_engine, algorithm_ver, params):
         self.dbcontroller               = dbcontroller
         self.text_storage_engine        = text_storage_engine

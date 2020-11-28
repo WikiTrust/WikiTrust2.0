@@ -8,7 +8,7 @@ from typing import List, Tuple, Dict, Callable, Sequence
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
-from wikitrust_lib.text_diff.edit import Edit
+from wikitrust.computation_engine.wikitrust_algorithms.text_diff.edit import Edit
 
 class TriangleGenerator:
     def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, params):
