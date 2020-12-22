@@ -12,12 +12,15 @@
 #from configuration import config
 import datetime
 import traceback
+import logging 
+
 #from safelog import Log
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 # TODO: read URI from a secrets/config.yaml type of file.
-def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
+
+def connect_to_db(uri = 'sqlite://storage.sqlite'):
     db = DAL(uri,
         migrate=True,
         fake_migrate=False,
@@ -32,9 +35,10 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # is shared between them.
             'environment',
             # Plain text name for the environment.
-            Field('environment_name')
+            Field('environment_name', unique = True)
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         db.define_table(
@@ -48,7 +52,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # There may be more revisions after this date that we do not know about.
             Field('last_check_time', 'datetime'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         db.define_table(
@@ -58,7 +63,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             Field('user_id', 'integer', unique = True),
             Field('user_name'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         db.define_table(
@@ -81,7 +87,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # Number of attempts made to get markup from Wikipedia.
             Field('num_attempts', 'integer'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         # Tracks what stage a page is at in the Computation Engine
@@ -101,7 +108,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # If null or old the page is not locked.
             Field('lock_date', 'datetime'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         db.define_table(
@@ -116,7 +124,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # Double containing the reuptation of the user.
             Field('reputation_value', 'double'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         db.define_table(
@@ -132,7 +141,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # Name of GCS blob where info is stored.
             Field('blob'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         # Cache for edit distance "triangles"
@@ -152,7 +162,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # This enables triangles to be processed twice. (Check that we can query for null numbers).
             Field('reputation_inc', 'double'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         # Cache for text difference.
@@ -168,7 +179,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # Text version of text_diff tuples between rev_id_1 and rev_id_2
             Field('info', 'text')
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     try:
         db.define_table(
@@ -183,7 +195,8 @@ def connect_to_db(uri = 'sqlite://volume/storage.sqlite'):
             # Numerical distance between rev_id_1 and rev_id_2.
             Field('distance', 'double'),
         )
-    except: pass
+    except: 
+        logging.debug(traceback.format_exc())
 
     return db
 

@@ -11,7 +11,7 @@ from typing import List
 from .word import Word
 
 #text_diff package imports
-from wikitrust_algorithms.text_diff.edit import Edit
+from wikitrust.computation_engine.wikitrust_algorithms.text_diff.edit import Edit
 
 class Block:
     """
