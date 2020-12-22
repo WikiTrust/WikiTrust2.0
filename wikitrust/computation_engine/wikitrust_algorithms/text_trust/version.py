@@ -13,7 +13,7 @@ from .block import Block
 from .word import Word
 
 #text_diff package imports
-from wikitrust_algorithms.text_diff.edit import Edit
+from wikitrust.computation_engine.wikitrust_algorithms.text_diff.edit import Edit
 
 class Version:
     """
@@ -100,14 +100,15 @@ class Version:
     @classmethod
     def create_version(cls, text_list: List[str], trust_list: List[float], \
                        author_rep: float, constants: Tuple[float, float, float]) -> "Version":
+
+        new_version = cls.create_initial_version(text_list, 0.0, constants)
+
         #Creates list of Word objects all with trust equal to initial_trust.
         word_list: List[Word] = Word.create_list_words(text_list, trust_list)
 
-        #Creates edit_list with one edit: A move of all text in text_list from
-        #zero to zero
-        edit_list = [Edit(Edit.MOVE, 0, 0, len(word_list))]
+        new_version.word_list = word_list
 
-        return cls(word_list, edit_list, author_rep, constants)
+        return new_version
 
 
     @classmethod

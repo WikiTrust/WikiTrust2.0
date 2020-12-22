@@ -1,11 +1,11 @@
 import json
 from datetime import datetime
 
-from wikitrust_algorithms.text_trust.version import Version
-from wikitrust_algorithms.text_trust.version import Block
-from wikitrust_algorithms.text_trust.version import Word
+from wikitrust.computation_engine.wikitrust_algorithms.text_trust.version import Version
+from wikitrust.computation_engine.wikitrust_algorithms.text_trust.block import Block
+from wikitrust.computation_engine.wikitrust_algorithms.text_trust.word import Word
 
-__ALGORITHM_VER__ = "TEXT_ANNOTATION_DEV"
+from wikitrust.computation_engine.wikitrust_algorithms.text_diff.edit import Edit
 
 __INITIAL_TRUST__ = 0
 
@@ -15,49 +15,65 @@ __EDGE_EFFECT_CONST__ = 2
 
 __CONSTANTS__ = (__TRUST_INHERITANCE_CONST__, __REVISION_CONST__, __EDGE_EFFECT_CONST__)
 
-def compute_revision_trust(rev_id, db, revision_storage_engine, trust_storage_engine):
-    """
-    Calculates the text trust of the passed revision_id.
-    Assumesthe previous revision's trust has already been calculated.
-    """
+class TextAnnotation:
+    def __init__(self, dbcontroller, text_storage_engine, trust_storage_engine, algorithm_ver, params):
+        self.dbcontroller               = dbcontroller
+        self.text_storage_engine        = text_storage_engine
+        self.trust_storage_engine       = trust_storage_engine
+        self.algorithm_ver              = algorithm_ver
+        self.trust_inheritance_const    = params[0]
+        self.revision_const             = params[1]
+        self.edge_effect_const          = params[2]
+        self.constants                  = (params[0], params[1], params[2])
+        self.text_diff_function         = params[3]
+        self.index_function             = params[4]
 
-    # Asserts that all the triangles with this revision in the
-    # most recent position have a reputation_inc not None.
-    target_triangles = db(db.triangles.revid_3 == rev_id).iterselect()
 
-    for target_triangle in target_triangles:
-        assert target_triangle.reputation_inc is not None #Consider changing to empty return?
+    def compute_revision_trust(self, rev_id):
+        """
+        Calculates the text trust of the passed revision_id.
+        Assumesthe previous revision's trust has already been calculated.
+        """
 
-    # Get previous revision and it's annotated text trust
-    target_revision = db(db.revision.rev_id == rev_id).select()
+        page_id = self.dbcontroller.get_page_from_rev(rev_id)
+        env_id = self.dbcontroller.get_environment_by_page_id(page_id)
 
-    assert len(target_revision) == 1
+        # Get previous revision and it's annotated text trust
+        prev_rev_id = self.dbcontroller.get_prev_rev(rev_id)
 
-    page_id = target_revision[0].page_id
-    prev_revision_id = target_revision[0].prev_revision
+        if prev_rev_id == None:
+            #First revision, so previous text and trust lists are empty
+            prev_text_vals = []
+            prev_trust_vals = []
+        else:
+            # Get previous text and trust values from storage engine
+            prev_text_vals = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, prev_rev_id))
 
-    # Assume JSON has the structure [word_list: [], trust_list: []]
-    previous_annotated_text = json.loads(trust_storage_engine.read(prev_revision_id, __ALGORITHM_VER__, page_id))
+            prev_trust_vals = json.loads(self.trust_storage_engine.read(self.algorithm_ver, page_id, prev_rev_id))
 
-    previous_text = previous_annotated_text["word_list"]
-    previus_trust = previous_annotated_text["trust_list"]
+        #Gets new text from storage engine
+        new_text_vals = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, rev_id))
 
-    #Gets new text from storage engine
-    new_text = revision_storage_engine.read(page_id, __ALGORITHM_VER__, rev_id).split()
+        #Gets author reputation
+        new_rev_author_id = self.dbcontroller.get_user_from_rev(rev_id)
+        author_rep = self.dbcontroller.get_reputation(self.algorithm_ver, new_rev_author_id, env_id)
 
-    #Gets author reputation
-    user_reputation = db(db.user_reputation.user_id == target_revision.user_id).select()
+        #Get Edits from previous to new revision
+        edit_index= self.index_function(new_text_vals)
+        edit_list_tuples = self.text_diff_function(prev_text_vals, new_text_vals, edit_index)
 
-    assert len(user_reputation) == 1
+        #Converts list of tuples to list of Edits
+        edit_list = [Edit.edit_tuple_constructor(edit_tuple) for edit_tuple in edit_list_tuples]
 
-    author_reputation = user_reputation[0]
+        prev_version = Version.create_version(prev_text_vals, prev_trust_vals, author_rep, self.constants)
 
-    new_version = Version.create_version(previous_text, previus_trust, author_reputation, __CONSTANTS__)
+        new_version = Version.create_next_version(prev_version, new_text_vals, edit_list, author_rep)
 
-    new_trust = [word.trust for word in new_version.word_list]
+        new_trust = [word.trust for word in new_version.word_list]
 
-    new_json = {"word_list": new_text, "trust_list": new_trust}
+        new_json = json.dumps(new_trust)
 
-    trust_storage_engine.store(page_id, __ALGORITHM_VER__, rev_id, new_json, datetime.now())
+        #Store new json in trust storage engine
+        self.trust_storage_engine.store(self.algorithm_ver, page_id, rev_id, new_json, datetime.now())
 
-    trust_storage_engine.flush()
+        self.trust_storage_engine.flush(self.algorithm_ver, page_id)

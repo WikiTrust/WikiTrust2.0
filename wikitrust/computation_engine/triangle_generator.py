@@ -8,92 +8,75 @@ from typing import List, Tuple, Dict, Callable, Sequence
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
-from wikitrust_lib.text_diff.edit import Edit
+from wikitrust.computation_engine.wikitrust_algorithms.text_diff.edit import Edit
 
 class TriangleGenerator:
-    def __init__(self, db, text_storage_engine, algorithm_ver, max_judge_dist, text_diff_function, index_function):
-        self.db = db
+    def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, params):
+        self.dbcontroller = dbcontroller
         self.text_storage_engine = text_storage_engine
         self.algorithm_ver = algorithm_ver
-        self.max_judge_dist = max_judge_dist
-        self.text_diff_function = text_diff_function
-        self.index_function = index_function
+        self.max_judge_dist = params[0]
+        self.text_diff_function = params[1]
+        self.index_function = params[2]
 
     def compute_triangles_batch(self, page_id):
-        #Maps class variables to shorter local variables
-        db = self.db
-        storage_engine = self.text_storage_engine
-
         #Retrieves page revisions
-        page_revs = db(db.revision.page_id == page_id).iterselect(orderby=db.revision.page_id)
+        page_revs = self.dbcontroller.get_all_revisions(page_id)
 
         # Rolls over current revision into reference revision, initialized to none
         reference_revision_text = None
         reference_revision_author = None
 
-        for rev_num in range(len(page_revs)):
+        for rev_iter in range(len(page_revs)):
+            print(rev_iter)
             # If this is the first revision, there is no reference revision so we cannot judge it.
             # We will however, populate reference_revision_text
-            if rev_num == 0:
-                #Checks that we have access to the reference text, add advanced error handling later
-                assert(page_revs[rev_num-1].text_retrieved == True)
-                #Populates reference_revision_text with current text for use in next iteration
-                reference_revision_id = page_revs[rev_num].revision_id
-                reference_revision_blob = page_revs[rev_num].revision_blob
-                reference_revision_text = storage_engine.read(page_id, self.algorithm_ver, rev_num)
-                reference_revision_author = page_revs[rev_num].user_id
+            if rev_iter == 0:
+                reference_revision_id = page_revs[rev_iter]
 
-            #Checks that we have access to the reference judged text, add advanced error handling later
-            assert(page_revs[rev_num].text_retrieved == True)
+                #Checks that we have access to the reference text, add advanced error handling later
+                assert self.dbcontroller.check_text_retrieved(reference_revision_id)
+
+                #Populates reference_revision_text with current text for use in next iteration
+                reference_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, reference_revision_id))
+
+                #Skip to next rev_iter
+                continue
+
+            judged_revision_id = page_revs[rev_iter]
+
+            #Checks that we have access to the judged text, add advanced error handling later
+            assert self.dbcontroller.check_text_retrieved(judged_revision_id)
 
             #Get revision text for current (judged) revision
-            judged_revision_id = page_revs[rev_num].revision_id
-            judged_revision_blob = page_revs[rev_num].revision_blob
-            judged_revision_text = storage_engine.read(page_id, self.algorithm_ver, rev_num)
-            judged_revision_author = page_revs[rev_num].user_id
+            judged_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, judged_revision_id))
 
             #Computes edit distance between reference and current once
             reference_current_distance = self.compute_edit_distance(reference_revision_text, judged_revision_text)
 
-            for new_rev_num in range(rev_num + 1, rev_num + self.max_judge_dist):
+            for new_rev_iter in range(rev_iter + 1, min(rev_iter + self.max_judge_dist, len(page_revs))):
+                new_revision_id = page_revs[new_rev_iter]
+
+                #Checks that we have access to the reference text, add advanced error handling later
+                assert self.dbcontroller.check_text_retrieved(new_revision_id)
+
                 #Get revision text for new revision
-                new_revision_id = page_revs[new_rev_num].revision_id
-                new_revision_blob = page_revs[new_rev_num].revision_blob
-                new_revision_text = storage_engine.read(page_id, self.algorithm_ver, new_rev_num)
-                new_revision_author = page_revs[new_rev_num].user_id
+                new_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, new_revision_id))
+
 
                 reference_new_distance = self.compute_edit_distance(reference_revision_text, new_revision_text)
                 current_new_distance = self.compute_edit_distance(judged_revision_text, new_revision_text)
 
-                triangle_dict = {"revisions": [reference_revision_id, judged_revision_id, new_revision_id], \
-                                 "distances": [reference_current_distance, reference_new_distance, current_new_distance], \
-                                 "authors":   [reference_revision_author, judged_revision_author, new_revision_author]}
+                revision_ids = (reference_revision_id, judged_revision_id, new_revision_id)
+                distances = (reference_current_distance, reference_new_distance, current_new_distance)
 
-                triangle_json = json.dumps(triangle_dict)
+                self.dbcontroller.create_triangle(self.algorithm_ver, page_id, revision_ids, distances)
 
-                db.triangles.update_or_insert((db.triangles.page == page_id) &
-                                            (db.triangles.algorithm == self.algorithm_ver) &
-                                            (db.triangles.judged_revision == judged_revision_id) &
-                                            (db.triangles.new_revision == new_revision_id),
-                                            page=page_id, \
-                                            algorithm=self.algorithm_ver, \
-                                            info=str(triangle_json), \
-                                            judged_revision=judged_revision_id, \
-                                            new_revision=new_revision_id, \
-                                            reputation_inc=None)
-
-            db.revision_log.update_or_insert((db.revision_log.page == page_id) & \
-                                             (db.revision_log.algorithm == self.algorithm_ver), \
-                                            page=page_id, \
-                                            algorithm=self.algorithm_ver, \
-                                            last_revision=judged_revision_id, \
-                                            lock_date=datetime.date.today() \
-                                            )
+            self.dbcontroller.update_revision_log(self.algorithm_ver, "TriangleGenerator", page_id, judged_revision_id)
 
             #Rolls over current revision variables into reference revision variables
             reference_revision_id = judged_revision_id
             reference_revision_text = judged_revision_text
-            reference_revision_author = judged_revision_author
 
 
     def compute_triangles_keepup(self):
@@ -105,8 +88,8 @@ class TriangleGenerator:
         """
 
         #Gets list of tuples representings edits
-        split_text_1: List[str] = rev_1_text.text.split()
-        split_text_2: List[str] = rev_2_text.text.split()
+        split_text_1: List[str] = rev_1_text
+        split_text_2: List[str] = rev_2_text
         edit_index: Dict[Tuple[str, str], List[int]] = self.index_function(split_text_2)
         edit_list_tuples: List[Tuple[int, int, int, int]] = self.text_diff_function(split_text_1, split_text_2, edit_index)
 
