@@ -13,11 +13,13 @@
 import datetime
 import traceback
 import logging 
+
 #from safelog import Log
 from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 # TODO: read URI from a secrets/config.yaml type of file.
+
 def connect_to_db(uri = 'sqlite://storage.sqlite'):
     db = DAL(uri,
         migrate=True,
