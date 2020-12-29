@@ -74,16 +74,28 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             Field('rev_id', 'integer', unique = True),
             Field('page_id', 'integer'),
             Field('user_id', 'integer'),
+
             # Datetime this revision was made on Wikipedia.
             Field('rev_date', 'datetime'),
+
+            # The revision before this one on the page.
+            # None if first revision for a page.
+            Field('next_rev', 'integer'),
+
             # The revision before this one on the page.
             # None if first revision for a page.
             Field('prev_rev', 'integer'),
+
+            # POTENTIALLY REDUNDANT: Index used for storage_engine blob population
+            Field('idx', 'integer'),
+
             # True means retrieved, False means not retrieved.
             Field('text_retrieved', 'boolean'),
+
             # Datetime of last attempt to retrieve revision.
             # Can also be a successful attempt.
             Field('last_attempt_date', 'datetime'),
+
             # Number of attempts made to get markup from Wikipedia.
             Field('num_attempts', 'integer'),
         )
