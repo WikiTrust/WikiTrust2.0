@@ -14,8 +14,8 @@ __all__ = ['StorageEngine']
 
 class StorageEngine(object):
 
-    def __init__(self, num_revs_per_file=10, bucket_name=None, db=None, database_table=None,
-                 default_version=0):
+    def __init__(self, num_revs_per_slot=10, bucket_name=None, db=None, revision_table=None,
+                 storage_table = None, default_version=0):
         """
         :param db: handle to the pydal database to be used.
         :param num_objects_per_blob:
@@ -27,16 +27,16 @@ class StorageEngine(object):
         export GOOGLE_APPLICATION_CREDENTIALS="[PATH]"
         """
         self.db = db
-        self.db_table = database_table
-        json_key = "storage_engine/private/wikitrust-prod-643472bb33d3.json"
+        self.storage_table = storage_table
+        self.revision_table = revision_table
+        json_key = "storage_engine/private/gcs_credentials.json"
         self.client = storage.Client.from_service_account_json(json_key)
         self.bucket_name = bucket_name
-        self.num_revs_per_file = num_revs_per_file
+        self.num_revs_per_slot = num_revs_per_slot
         self.lock = Lock()
         self.cache = collections.OrderedDict()
         self.cache_size = 1000
-        self.revision_dict = {}
-        self.current_blob_name = None
+        self.page_dict = {}
         self.default_version = default_version
 
         pass
@@ -57,26 +57,38 @@ class StorageEngine(object):
                 print("Could not write revision: No rev_id")
                 return False
             
-            query = (self.db_table.version == version_id) and (page_id == self.db_table.page_id) and (rev_id == self.db_table.rev_id)
-            blob_list = self.db(query).select(self.db_table.blob)
+            # Storage table query
+            query = (self.storage_table.version == version_id) and (page_id == self.storage_table.page_id) and (rev_id == self.storage_table.rev_id)
+            blob_list = self.db(query).select(self.storage_table.blob)
             if blob_list != None and len(blob_list) > 0:
                 return False # Do not overwrite if a revision text with the givien version_id,page_id,rev_id exists
 
-            if self.current_blob_name is None:
-                self.current_blob_name = str(rev_id) + "-" + str(version_id)
-                
-            self.db_table.insert(rev_id=rev_id, version=version_id, blob=self.current_blob_name, text_type=kind)
+            # Revision table query
+            query = (self.revision_table.rev_id == rev_id) and (page_id == self.revision_table.page_id)
+            revision_list = self.db(query).select(self.revision_table.rev_idx)
+            if revision_list == None or len(revision_list) == 0:
+                return False
+            slot_num = revision_list[0]["rev_idx"]//self.num_revs_per_slot
+            blob_name = str(slot_num) + "-" + str(version_id)
+
+            if page_id not in self.page_dict:
+                self.page_dict[page_id] = {}
+
+            if slot_num not in self.page_dict[page_id]:
+                current_data = self.read_all(page_id, version_id, rev_id, do_cache=False)
+                self.page_dict[page_id][slot_num] = current_data
+                         
+            self.storage_table.insert(rev_id=rev_id, version=version_id, blob=blob_name, text_type=kind)
             self.db.commit()
-            self.revision_dict[str(rev_id)] = text
-            if len(self.revision_dict) >= self.num_revs_per_file:
-                self.__write_revisions()
+            self.page_dict[page_id][slot_num][str(rev_id)] = text
+            if len(self.page_dict[page_id][slot_num]) >= self.num_revs_per_slot:
+                self.__write_revisions(page_id, slot_num, blob_name)
                 return True
             return False
 
         return False
 
-
-    def read(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> str:
+    def read_all(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> {}:
         """
         Reads from the text storage.
         :param page_id:
@@ -84,10 +96,17 @@ class StorageEngine(object):
         :param rev_id:
         :return: The string that was written.
         """
-        query = (self.db_table.version == version_id) and (page_id == self.db_table.page_id) and (rev_id == self.db_table.rev_id)
-        blob_list = self.db(query).select(self.db_table.blob)
+        query = (self.storage_table.version == version_id) and (page_id == self.storage_table.page_id) and (rev_id == self.storage_table.rev_id)
+        blob_list = self.db(query).select(self.storage_table.blob)
         if len(blob_list) <= 0:
-            return None
+            return {}
+
+        # Revision table query
+        query = (self.revision_table.rev_id == rev_id) and (page_id == self.revision_table.page_id)
+        revision_list = self.db(query).select(self.revision_table.rev_idx)
+        if revision_list == None or len(revision_list) == 0:
+            return {}
+        slot_num = revision_list[0]["rev_idx"]//self.num_revs_per_slot
         
         blob_name = blob_list[0].blob
 
@@ -100,30 +119,38 @@ class StorageEngine(object):
                 self.__make_cache_space()
                 self.cache[blob_name] = s
         if s is not None:
-            revision_dict = json.loads(zlib.decompress(s).decode('utf-8'))
+            self.page_dict[page_id][slot_num] = json.loads(zlib.decompress(s).decode('utf-8'))
             try:
-                return revision_dict[str(rev_id)]
+                return self.page_dict[page_id][slot_num]
             except:
-                return None
+                return {}
         else:
-            return None
+            return {}
+
+
+    def read(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> str:
+        db_data = self.read_all(page_id, version_id, rev_id, do_cache)
+        if db_data == {}:
+           return ""
+        else:
+            return db_data[rev_id]
 
 
     def flush(self):
         """Writes any remaining revisions to the GCS bucket immediately."""
         with self.lock:
-            self.__write_revisions()
+            for page in self.page_dict:
+                for slot in self.page_dict[page]:
+                    self.__write_revisions(page, slot, str(slot)+" - THIS SHOULDNT HAPPEN")
 
-    def __write_revisions(self):
+    def __write_revisions(self, page, slot_num, blob_name):
         """Compresses and stores the revisions in self.revision_dict in gcs"""
-        if len(self.revision_dict) > 0:
-            revisions_json = bytes(json.dumps(self.revision_dict), 'utf-8')
+        if len(self.page_dict[page][slot_num]) > 0:
+            revisions_json = bytes(json.dumps(self.page_dict[page][slot_num]), 'utf-8')
             s = zlib.compress(revisions_json)
-            name = self.current_blob_name
-            self.__write(self.bucket_name, name, s, type='application/zlib')
+            self.__write(self.bucket_name, blob_name, s, type='application/zlib')
             # Empties the memory list.
-        self.revision_dict = {}
-        self.current_blob_name = None
+        self.page_dict[page][slot_num] = {}
 
     def __write(self, bucketname, filename, content, type='text/plain'):
         """
@@ -222,6 +249,10 @@ class StorageEngine(object):
                 if maximum is None or k < maximum]
 
 class RevisionEngine(StorageEngine):
+
+    # def __write(self, bucketname, filename, content, type='text/plain'):
+    #     super().__write(self, bucketname, "revisions/"+filename, content, type)
+
     pass
 
 class TextReputationEngine(StorageEngine):
