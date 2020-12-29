@@ -18,7 +18,7 @@ class LocalStorageEngine(object):
         #Initialize a dictionary mapping page_id to a page_dictionary
         self.pages = {}
 
-    def store(self, page_id: int, version_id: str, rev_id: int, text: str, timestamp: datetime.datetime):
+    def store(self, version_id: str, page_id: int, rev_id: int, text: str, timestamp: datetime.datetime):
         """Writes to the store.
         :param page_id: id of page (or in general, of compression space)
         :param version_id: id of the version we are writing.
@@ -34,7 +34,7 @@ class LocalStorageEngine(object):
         self.pages[page_id][rev_id] = text
 
 
-    def read(self, page_id: int, version_id: str, rev_id: int) -> str:
+    def read(self, version_id: str, page_id: int, rev_id: int) -> str:
         """
         Reads from the text storage.
         :param page_id: id of page (or in general, of compression space)
@@ -48,20 +48,20 @@ class LocalStorageEngine(object):
         return self.pages[page_id][rev_id]
 
 
-    def flush(self, page_id: int, version_id: str):
+    def flush(self, version_id: str, page_id: int):
         """Writes all remaining changes to the given page_id and version_id."""
         pass
 
-def load_page_json_into_storage(storage_engine, json):
+def load_page_json_into_storage(storage_engine, input_json):
     """
     Takes a JSON object containing information about a Wikipedia page and loads it into the storage engine.
     """
-    page_id = int(json["pageId"])
+    page_id = int(input_json["pageId"])
 
-    for rev_iter in range(int(json["size"])):
-        rev_id = json["revisions"][rev_iter]["revisionId"]
-        rev_text = json["revisions"][rev_iter]["text"]
-        storage_engine.store(page_id, "DUMMY_VERSION", rev_id, rev_text, datetime.datetime.now())
+    for rev_iter in range(int(input_json["size"])):
+        rev_id = input_json["revisions"][rev_iter]["revisionId"]
+        rev_text = input_json["revisions"][rev_iter]["text"]
+        storage_engine.store("DUMMY_VERSION", page_id, rev_id, json.dumps(rev_text.split()), datetime.datetime.now())
 
 if __name__ == '__main__':
     """ 
