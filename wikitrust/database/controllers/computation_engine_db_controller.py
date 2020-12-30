@@ -14,21 +14,17 @@ class computation_engine_db_controller:
 
     def populate_prev_rev(self, page_id):
         all_revs = self.db(self.db.revision.page_id == page_id).iterselect(orderby=self.db.revision.rev_id)
-        #prev2 = None
-        for i in range(len(all_revs)):
-            all_revs[i].prev_rev = (None, all_revs[i-1])[i!=0]
-            all_revs[i].next_rev = (None, all_revs[i+1])[i < len(all_revs)]
-            all_revs[i].idx = i
-            all_revs[i].update_record()
-            self.db.commit()
-        '''
+        prev2 = None
         for rev in all_revs:
             prev = rev
-            rev.prev_rev = prev2
+            rev.prev_rev = prev2.rev_id
+            if(prev2):
+                prev2.next_rev = rev
+                prev2.update_record()
             rev.update_record()
             self.db.commit()
-            prev2 = prev.rev_id
-        '''
+            prev2 = prev
+        
         print("Previous Revision Field Populated")
     
     #parameters: rev_id
