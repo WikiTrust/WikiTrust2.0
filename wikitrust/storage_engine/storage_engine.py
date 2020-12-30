@@ -3,9 +3,10 @@ from datetime import datetime
 import os
 import json
 import traceback
+from typing import Dict
 import zlib
 import collections
-
+from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
 from google.cloud import storage
 from threading import Lock
 
@@ -14,7 +15,7 @@ __all__ = ['StorageEngine']
 
 class StorageEngine(object):
 
-    def __init__(self, num_revs_per_slot=10, bucket_name=None, db=None, revision_table=None,
+    def __init__(self, num_revs_per_slot=10, bucket_name=None, db_ctrl=None, revision_table=None,
                  storage_table = None, default_version=0):
         """
         :param db: handle to the pydal database to be used.
@@ -26,10 +27,8 @@ class StorageEngine(object):
         Another way is to provide the path to the json via:
         export GOOGLE_APPLICATION_CREDENTIALS="[PATH]"
         """
-        self.db = db
-        self.storage_table = storage_table
-        self.revision_table = revision_table
-        json_key = "storage_engine/private/gcs_credentials.json"
+        self.db_ctrl = db_ctrl
+        json_key = "private/gcs_credentials.json"
         self.client = storage.Client.from_service_account_json(json_key)
         self.bucket_name = bucket_name
         self.num_revs_per_slot = num_revs_per_slot
@@ -56,19 +55,17 @@ class StorageEngine(object):
             if rev_id is None:
                 print("Could not write revision: No rev_id")
                 return False
-            
+
             # Storage table query
-            query = (self.storage_table.version == version_id) and (page_id == self.storage_table.page_id) and (rev_id == self.storage_table.rev_id)
-            blob_list = self.db(query).select(self.storage_table.blob)
-            if blob_list != None and len(blob_list) > 0:
+            rev_is_stored = self.db_ctrl.get_storage_blob_name(page_id=page_id,version_id=version_id,rev_id=rev_id)
+            if(rev_is_stored != None):
                 return False # Do not overwrite if a revision text with the givien version_id,page_id,rev_id exists
 
             # Revision table query
-            query = (self.revision_table.rev_id == rev_id) and (page_id == self.revision_table.page_id)
-            revision_list = self.db(query).select(self.revision_table.rev_idx)
-            if revision_list == None or len(revision_list) == 0:
+            rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
+            if rev_idx == None:
                 return False
-            slot_num = revision_list[0]["rev_idx"]//self.num_revs_per_slot
+            slot_num = rev_idx//self.num_revs_per_slot
             blob_name = str(slot_num) + "-" + str(version_id)
 
             if page_id not in self.page_dict:
@@ -77,9 +74,10 @@ class StorageEngine(object):
             if slot_num not in self.page_dict[page_id]:
                 current_data = self.read_all(page_id, version_id, rev_id, do_cache=False)
                 self.page_dict[page_id][slot_num] = current_data
-                         
-            self.storage_table.insert(rev_id=rev_id, version=version_id, blob=blob_name, text_type=kind)
-            self.db.commit()
+
+            #
+            self.db_ctrl.insert_blob_name(rev_id=rev_id, version_id=version_id, blob_name=blob_name, text_type=kind)
+
             self.page_dict[page_id][slot_num][str(rev_id)] = text
             if len(self.page_dict[page_id][slot_num]) >= self.num_revs_per_slot:
                 self.__write_revisions(page_id, slot_num, blob_name)
@@ -88,7 +86,7 @@ class StorageEngine(object):
 
         return False
 
-    def read_all(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> {}:
+    def read_all(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> Dict:
         """
         Reads from the text storage.
         :param page_id:
@@ -96,19 +94,18 @@ class StorageEngine(object):
         :param rev_id:
         :return: The string that was written.
         """
-        query = (self.storage_table.version == version_id) and (page_id == self.storage_table.page_id) and (rev_id == self.storage_table.rev_id)
-        blob_list = self.db(query).select(self.storage_table.blob)
-        if len(blob_list) <= 0:
+        rev_blob_name = self.db_ctrl.get_storage_blob_name(rev_id = rev_id, page_id = page_id,version_id=version_id)
+        if rev_blob_name == None:
             return {}
 
         # Revision table query
-        query = (self.revision_table.rev_id == rev_id) and (page_id == self.revision_table.page_id)
-        revision_list = self.db(query).select(self.revision_table.rev_idx)
-        if revision_list == None or len(revision_list) == 0:
+        rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
+        if rev_idx == None:
             return {}
-        slot_num = revision_list[0]["rev_idx"]//self.num_revs_per_slot
-        
-        blob_name = blob_list[0].blob
+
+        slot_num = rev_idx//self.num_revs_per_slot
+
+        blob_name = rev_blob_name.blob
 
         s = None
         if do_cache and blob_name in self.cache:
