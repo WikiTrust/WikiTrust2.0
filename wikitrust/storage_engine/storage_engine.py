@@ -126,11 +126,20 @@ class StorageEngine(object):
 
 
     def read(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> str:
+        # Revision table query
+        rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
+        if rev_idx == None:
+            return {}
+        slot_num = rev_idx//self.num_revs_per_slot
+
+        if(rev_id in self.page_dict[page_id][slot_num]):
+            return self.page_dict[page_id][slot_num][rev_id]
+
         db_data = self.read_all(page_id, version_id, rev_id, do_cache)
         if db_data == {}:
            return ""
         else:
-            return db_data[rev_id]
+            return db_data[str(rev_id)]
 
 
     def flush(self):
