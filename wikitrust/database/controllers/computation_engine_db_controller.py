@@ -18,10 +18,9 @@ class computation_engine_db_controller:
         for i,rev in enumerate(all_revs):
             prev = rev
             rev.rev_idx = i
-
             if(prev2):
                 rev.prev_rev = prev2.rev_id
-                prev2.next_rev = rev
+                prev2.next_rev = rev.rev_id
                 prev2.update_record()
             rev.update_record()
             self.db.commit()
