@@ -60,13 +60,15 @@ class create_entry:
         page_id = -1, 
         user_id = -1, 
         rev_date = None, 
+        next_rev = -1,
         prev_rev = -1, 
+        idx = -1,
         text_retrieved = 'T', 
         last_attempt_date = None, 
         num_attempts = -1,
     ):
         try:
-            ret = self.db.revision.insert(rev_id = rev_id, page_id = page_id, user_id = user_id, rev_date = rev_date, prev_rev = prev_rev, text_retrieved = text_retrieved, last_attempt_date = last_attempt_date, num_attempts = num_attempts)
+            ret = self.db.revision.insert(rev_id = rev_id, page_id = page_id, user_id = user_id, rev_date = rev_date, next_rev = next_rev, prev_rev = prev_rev, idx = idx, text_retrieved = text_retrieved, last_attempt_date = last_attempt_date, num_attempts = num_attempts)
             return ret
         except:
             self.db.rollback()

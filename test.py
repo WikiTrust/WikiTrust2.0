@@ -8,8 +8,8 @@ def db_population_test():
     db_test.drop_and_populate()
 
 if __name__ == '__main__':
-    # ce_test.test_computation_engine()
-    storage_test.test_storage_engine()
+    ce_test.test_computation_engine()
+    # storage_test.test_storage_engine()
     # db = db_schema.connect_to_db()
     # print(db)
     # print(db.text_storage)
