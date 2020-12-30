@@ -19,6 +19,7 @@ class computation_engine_db_controller:
             all_revs[i].prev_rev = (None, all_revs[i-1])[i!=0]
             all_revs[i].next_rev = (None, all_revs[i+1])[i < len(all_revs)]
             all_revs[i].idx = i
+            all_revs[i].update_record()
             self.db.commit()
         '''
         for rev in all_revs:
