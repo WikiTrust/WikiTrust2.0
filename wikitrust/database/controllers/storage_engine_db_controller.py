@@ -21,11 +21,15 @@ class storage_engine_db_controller:
     """
     def get_storage_blob_name(self, page_id: int, version_id: int, rev_id: int):
         # Returns
-        query = (self.storage_table.version == version_id) and (page_id == self.storage_table.page_id) and (rev_id == self.storage_table.rev_id)
+        query = (self.storage_table.version == version_id) & (page_id == self.storage_table.page_id) & (rev_id == self.storage_table.rev_id)
         blob_list = self.db(query).select(self.storage_table.blob)
         if blob_list != None and len(blob_list) > 0:
             return blob_list[0]
         return None
+
+    def count_revisions_in_blob(self, blob_name: str):
+        x = self.db(self.storage_table.blob == blob_name).count()
+        return x
 
     """Writes to the store.
     :param page_id: id of page (or in general, of compression space)
@@ -35,8 +39,8 @@ class storage_engine_db_controller:
                 (meaning it is in a blob in a gcsbucket)
     """
     def get_rev_idx(self, page_id: int, rev_id: int):
-        query = (self.revision_table.rev_id == rev_id) and (page_id == self.revision_table.page_id)
-        revision_list = self.db(query).select(self.revision_table.rev_idx)
+        query = (self.db.revision.rev_id == rev_id) & (page_id == self.db.revision.page_id)
+        revision_list = self.db(query).select(self.db.revision.rev_idx)
         if revision_list == None or len(revision_list) == 0:
             return None
         return revision_list[0]["rev_idx"]
@@ -48,5 +52,6 @@ class storage_engine_db_controller:
     :return: Whether the given page/revision/version combo exists in the Storage table
                 (meaning it is in a blob in a gcsbucket)
     """
-    def insert_blob_name(self, rev_id:int, version_id:int, blob_name:str, text_type:str):
-        self.storage_table.insert(rev_id=rev_id, version=version_id, blob=blob_name, text_type=text_type)
+    @autocommit
+    def insert_blob_name(self, rev_id:int, page_id: int, version_id:int, blob_name:str, text_type:str):
+        self.storage_table.insert(rev_id=rev_id, version=version_id, page_id = page_id, blob=blob_name, text_type=text_type)

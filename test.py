@@ -3,12 +3,14 @@ import wikitrust.test.computation_engine_debug as ce_test
 import wikitrust.test.storage_engine_debug as storage_test
 
 import wikitrust.database.db_schema as db_schema
+import os
 
 def db_population_test():
     db_test.drop_and_populate()
 
 if __name__ == '__main__':
     # ce_test.test_computation_engine()
+    os.system("del storage.sqlite")
     db_population_test()
     storage_test.test_storage_engine()
     # db = db_schema.connect_to_db()
