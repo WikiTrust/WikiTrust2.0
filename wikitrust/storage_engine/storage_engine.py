@@ -15,13 +15,12 @@ __all__ = ['StorageEngine']
 
 class StorageEngine(object):
 
-    def __init__(self, num_revs_per_slot=10, bucket_name=None, db_ctrl=None, revision_table=None,
-                 storage_table = None, default_version=0):
+    def __init__(self, num_revs_per_slot=10, bucket_name=None, db_ctrl=None, version=0, text_type="revision"):
         """
         :param db: handle to the pydal database to be used.
         :param num_objects_per_blob:
         :param str database_table: the name of the database table for the storage engine
-        :param default_version: Default blob version
+        :param default_version: Blob version
 
         Builds an GCS access controller.
         Another way is to provide the path to the json via:
@@ -36,15 +35,15 @@ class StorageEngine(object):
         #self.cache = collections.OrderedDict()
         #self.cache_size = 1000
         self.page_dict = {}
-        self.default_version = default_version
+        self.version = version
+        self.text_type = text_type
 
         pass
 
 
-    def store(self, page_id: int, version_id: int, rev_id: int, text: str, timestamp: datetime, kind: str):
+    def store(self, page_id: int, rev_id: int, text: str, timestamp: datetime):
         """Writes to the store.
         :param page_id: id of page (or in general, of compression space)
-        :param version_id: id of the version we are writing.
         :param rev_id: id of revision (or in general, of object in space)
         :param text: text to be written (a python string)
         :param timestamp: timestamp originally of revision in wikipedia.
@@ -57,7 +56,7 @@ class StorageEngine(object):
                 return False
 
             # Storage table query
-            rev_is_stored = self.db_ctrl.get_storage_blob_name(page_id=page_id,version_id=version_id,rev_id=rev_id)
+            rev_is_stored = self.db_ctrl.get_storage_blob_name(page_id=page_id,version_id=self.version,rev_id=rev_id,text_type=self.text_type)
             if(rev_is_stored != None):
                 return False # Do not overwrite if a revision text with the givien version_id,page_id,rev_id exists
 
@@ -70,28 +69,27 @@ class StorageEngine(object):
                 self.page_dict[page_id] = {}
 
             slot_num = rev_idx//self.num_revs_per_slot  
-            blob_name = str(slot_num) + "-" + str(version_id)
+            blob_name = str(slot_num) + "-" + str(self.version)
             if slot_num not in self.page_dict[page_id]:
                 self.page_dict[page_id][slot_num] = {}  
 
-                if self.db_ctrl.count_revisions_in_blob(blob_name) > 0:
-                    found_revs = self.read_all(page_id, version_id, rev_id, do_cache=True)
+                if self.db_ctrl.count_revisions_in_blob(blob_name, self.text_type) > 0:
+                    found_revs = self.read_all(page_id, rev_id, do_cache=True)
                     self.page_dict[page_id][slot_num] = found_revs            
 
             self.page_dict[page_id][slot_num][str(rev_id)] = text
 
             if len(self.page_dict[page_id][slot_num]) >= self.num_revs_per_slot:
-                self.__write_revisions(page_id, version_id, slot_num, kind)
+                self._write_revisions(page_id, slot_num)
                 return True
             return False
 
         return False
 
-    def read_all(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> Dict:
+    def read_all(self, page_id: int, rev_id: int, do_cache=True) -> Dict:
         """
         Reads from the text storage.
         :param page_id:
-        :param version_id:
         :param rev_id:
         :return: The string that was written.
         """
@@ -106,13 +104,13 @@ class StorageEngine(object):
 
         slot_num = rev_idx//self.num_revs_per_slot
 
-        blob_name = str(slot_num) + "-" + str(version_id)
+        blob_name = str(slot_num) + "-" + str(self.version)
 
         s = None
         # if do_cache and blob_name in self.cache:
         #     s = self.cache[blob_name]
         if s is None:
-            s = self.__read(self.bucket_name, blob_name)
+            s = self._read(self.bucket_name, blob_name)
             # if s and do_cache:
             #     self.__make_cache_space()
             #     self.cache[blob_name] = s
@@ -123,7 +121,7 @@ class StorageEngine(object):
             return {}
 
 
-    def read(self, page_id: int, version_id: int, rev_id: int, do_cache=True) -> str:
+    def read(self, page_id: int, rev_id: int, do_cache=True) -> str:
         # Revision table query
         rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
         if rev_idx == None:
@@ -132,7 +130,7 @@ class StorageEngine(object):
         if(page_id in self.page_dict and slot_num in self.page_dict[page_id] and str(rev_id) in self.page_dict[page_id][slot_num]):
             return self.page_dict[page_id][slot_num][str(rev_id)]
 
-        db_data = self.read_all(page_id, version_id, rev_id, do_cache)
+        db_data = self.read_all(page_id, rev_id, do_cache)
         if db_data == {}:
            return ""
         else:
@@ -145,25 +143,25 @@ class StorageEngine(object):
             for page in self.page_dict:
                 for slot in self.page_dict[page]:
                     # TODO: Make version part of the storage engine state
-                    self.__write_revisions(page, 2, slot, "IDK TEXT TYPE")
+                    self._write_revisions(page, slot)
         
 
-    def __write_revisions(self, page, version_id, slot_num, text_type):
+    def _write_revisions(self, page, slot_num):
         """Compresses and stores the revisions in self.revision_dict in gcs"""
-        blob_name = str(slot_num) + "-" + str(version_id)
+        blob_name = str(slot_num) + "-" + str(self.version)
         if len(self.page_dict[page][slot_num]) > 0:
             revisions_json = bytes(json.dumps(self.page_dict[page][slot_num]), 'utf-8')
             #s = zlib.compress(revisions_json)
             s = revisions_json
-            self.__write(self.bucket_name, blob_name, s, type='application/zlib')
+            self._write(self.bucket_name, blob_name, s, type='application/zlib')
             # Empties the memory list.
 
             for revision in self.page_dict[page][slot_num]:
-                self.db_ctrl.insert_blob_name(rev_id=revision, version_id=version_id, page_id=page, blob_name=blob_name, text_type=text_type)
+                self.db_ctrl.insert_blob_name(rev_id=revision, version_id=self.version, page_id=page, blob_name=blob_name, text_type=self.text_type)
         
         self.page_dict[page][slot_num] = {}
 
-    def __write(self, bucketname, filename, content, type='text/plain'):
+    def _write(self, bucketname, filename, content, type='text/plain'):
         """
         Writes content to GCS from a string
         :param bucketname: Bucket name.
@@ -173,12 +171,10 @@ class StorageEngine(object):
         :return: Nothing.
         """
         bucket = self.client.get_bucket(bucketname)
-        print("PERFORMING __write")
-        print(filename)
         blob = storage.Blob(filename, bucket)
         blob.upload_from_string(content, content_type=type)
 
-    def __read(self, bucketname, filename):
+    def _read(self, bucketname, filename):
         """
         Reads content from GCS.
         :param bucketname: Bucket name.
@@ -195,11 +191,11 @@ class StorageEngine(object):
         Checks the length of the cache and if over self.cache_size, removes the first n revisions
         in the cache so the cache length is back to self.cache_size.
         """
-        keys = self.cache.keys()
-        full = len(keys) - self.cache_size
-        if full >= 0:
-            for key in keys[0: full+1]:
-                del self.cache[key]
+        # keys = self.cache.keys()
+        # full = len(keys) - self.cache_size
+        # if full >= 0:
+        #     for key in keys[0: full+1]:
+        #         del self.cache[key]
 
     def __enter__(self):
         """
@@ -263,16 +259,16 @@ class StorageEngine(object):
 
 class RevisionEngine(StorageEngine):
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(self, *args, **kwargs)
+    def _write(self, bucketname, filename, content, type='text/plain'):
+        return super()._write(bucketname, "revisions/"+filename, content, type)
 
-    def __write(self, bucketname, filename, content, type='text/plain'):
-        print("SUBCLASS WRITE")
-        return super().__write(self, bucketname, "revisions/"+filename, content, type)
-
-    def __read(self, bucketname, filename, content, type='text/plain'):
-        print("SUBCLASS READ")
-        return super().__read(self, bucketname, "revisions/"+filename, content, type)
+    def _read(self, bucketname, filename):
+        return super()._read(bucketname, "revisions/"+filename)
 
 class TextReputationEngine(StorageEngine):
-    pass
+
+    def _write(self, bucketname, filename, content, type='text/plain'):
+        return super()._write(bucketname, "text_reputation/"+filename, content, type)
+
+    def _read(self, bucketname, filename):
+        return super()._read(bucketname, "text_reputation/"+filename)

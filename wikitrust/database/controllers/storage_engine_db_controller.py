@@ -19,16 +19,18 @@ class storage_engine_db_controller:
     :return: Whether the given page/revision/version combo exists in the Storage table
                 (meaning it is in a blob in a gcsbucket)
     """
-    def get_storage_blob_name(self, page_id: int, version_id: int, rev_id: int):
+    def get_storage_blob_name(self, page_id: int, version_id: int, rev_id: int, text_type: str):
         # Returns
-        query = (self.storage_table.version == version_id) & (page_id == self.storage_table.page_id) & (rev_id == self.storage_table.rev_id)
+        query = (self.storage_table.version == version_id) & (page_id == self.storage_table.page_id) \
+            & (rev_id == self.storage_table.rev_id) & (text_type == self.storage_table.text_type)
         blob_list = self.db(query).select(self.storage_table.blob)
         if blob_list != None and len(blob_list) > 0:
             return blob_list[0]
         return None
 
-    def count_revisions_in_blob(self, blob_name: str):
-        x = self.db(self.storage_table.blob == blob_name).count()
+    def count_revisions_in_blob(self, blob_name: str, text_type: str):
+        query = (self.storage_table.blob == blob_name) & (self.storage_table.text_type == text_type)
+        x = self.db(query).count()
         return x
 
     """Writes to the store.

@@ -36,17 +36,17 @@ def test_storage_engine():
     # print(se.read(page_id=31774937, version_id="2", rev_id=933170168))
     
 
-    with StorageEngine(bucket_name='wikitrust-testing', num_revs_per_slot=3, db_ctrl=db_ctrl, default_version=1) as se:
-        se.store(page_id=31774937, version_id="2", rev_id=429099416, text="2nd", timestamp=datetime.now(), kind="stuff")
-        se.store(page_id=31774937, version_id="2", rev_id=429097598, text="0th", timestamp=datetime.now(), kind="stuff")
-        se.store(page_id=31774937, version_id="2", rev_id=442457383, text="51th", timestamp=datetime.now(), kind="stuff")
-        se.store(page_id=31774937, version_id="2", rev_id=429097648, text="1st", timestamp=datetime.now(), kind="stuff")
-        se.store(page_id=31774937, version_id="2", rev_id=442400879, text="50th", timestamp=datetime.now(), kind="stuff")
+    with RevisionEngine(bucket_name='wikitrust-testing', num_revs_per_slot=3, db_ctrl=db_ctrl, version=1) as se:
+        se.store(page_id=31774937, rev_id=429099416, text="2nd", timestamp=datetime.now())
+        se.store(page_id=31774937, rev_id=429097598, text="0th", timestamp=datetime.now())
+        se.store(page_id=31774937, rev_id=442457383, text="51th", timestamp=datetime.now())
+        se.store(page_id=31774937, rev_id=429097648, text="1st", timestamp=datetime.now())
+        se.store(page_id=31774937, rev_id=442400879, text="50th", timestamp=datetime.now())
         
-        print(se.read(page_id=31774937, version_id="2", rev_id=442400879))
+        print(se.read(page_id=31774937, rev_id=442400879))
    
-    with StorageEngine(bucket_name='wikitrust-testing', num_revs_per_slot=2, db_ctrl=db_ctrl, default_version=1) as se:
-        se.store(page_id=31774937, version_id="2", rev_id=429102121, text="3rd", timestamp=datetime.now(), kind="stuff")
+    with RevisionEngine(bucket_name='wikitrust-testing', num_revs_per_slot=3, db_ctrl=db_ctrl, version=1) as se:
+        se.store(page_id=31774937, rev_id=429102121, text="3rd", timestamp=datetime.now())
         print("------------------------------")
-        print("second is: %s" % se.read(page_id=31774937, version_id="2", rev_id=429099416))
-        print("third is: %s" % se.read(page_id=31774937, version_id="2", rev_id=429102121))
+        print("second is: %s" % se.read(page_id=31774937, rev_id=429099416))
+        print("third is: %s" % se.read(page_id=31774937, rev_id=429102121))
