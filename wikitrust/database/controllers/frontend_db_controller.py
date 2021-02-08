@@ -6,17 +6,23 @@ import wikitrust.database.db_schema as db_schema
 from wikitrust.database.controllers.db_wrappers import autocommit
 import logging
 
-
 class frontend_db_controller:
     def __init__(self, uri = 'sqlite://storage.sqlite'):
         self.db = db_schema.connect_to_db(uri)
-        self.create = create(self.db)
 
     #parameters: rev_id
     #return previous revision id
     def get_prev_rev(self, rev_id):
         rev = self.db(self.db.revision.rev_id == rev_id).select().first()
         return rev.prev_rev
+
+    #parameters: rev_id
+    #return next revision id
+    def get_next_rev(self, rev_id):
+        rev = self.db(self.db.revision.rev_id == rev_id).select().first()
+        print(rev)
+        return rev.next_rev
+
 
     #parameters: page_id
     #return all revision ids

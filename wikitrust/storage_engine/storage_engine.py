@@ -12,10 +12,11 @@ from threading import Lock
 
 
 __all__ = ['StorageEngine']
+__num_revs_per_slot__ = 5
 
 class StorageEngine(object):
 
-    def __init__(self, num_revs_per_slot=10, bucket_name=None, db_ctrl=None, version=0, text_type="revision"):
+    def __init__(self, bucket_name=None, db_ctrl=None, version=0, text_type="revision"):
         """
         :param db: handle to the pydal database to be used.
         :param num_objects_per_blob:
@@ -30,7 +31,7 @@ class StorageEngine(object):
         json_key = "private/gcs_credentials.json"
         self.client = storage.Client.from_service_account_json(json_key)
         self.bucket_name = bucket_name
-        self.num_revs_per_slot = num_revs_per_slot
+        self.num_revs_per_slot = __num_revs_per_slot__
         self.lock = Lock()
         #self.cache = collections.OrderedDict()
         #self.cache_size = 1000
@@ -64,18 +65,18 @@ class StorageEngine(object):
             rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
             if rev_idx == None:
                 return False
-            
+
             if page_id not in self.page_dict:
                 self.page_dict[page_id] = {}
 
-            slot_num = rev_idx//self.num_revs_per_slot  
+            slot_num = rev_idx//self.num_revs_per_slot
             blob_name = str(slot_num) + "-" + str(self.version)
             if slot_num not in self.page_dict[page_id]:
-                self.page_dict[page_id][slot_num] = {}  
+                self.page_dict[page_id][slot_num] = {}
 
                 if self.db_ctrl.count_revisions_in_blob(blob_name, self.text_type) > 0:
                     found_revs = self.read_all(page_id, rev_id, do_cache=True)
-                    self.page_dict[page_id][slot_num] = found_revs            
+                    self.page_dict[page_id][slot_num] = found_revs
 
             self.page_dict[page_id][slot_num][str(rev_id)] = text
 
@@ -142,9 +143,8 @@ class StorageEngine(object):
         with self.lock:
             for page in self.page_dict:
                 for slot in self.page_dict[page]:
-                    # TODO: Make version part of the storage engine state
                     self._write_revisions(page, slot)
-        
+
 
     def _write_revisions(self, page, slot_num):
         """Compresses and stores the revisions in self.revision_dict in gcs"""
@@ -158,7 +158,7 @@ class StorageEngine(object):
 
             for revision in self.page_dict[page][slot_num]:
                 self.db_ctrl.insert_blob_name(rev_id=revision, version_id=self.version, page_id=page, blob_name=blob_name, text_type=self.text_type)
-        
+
         self.page_dict[page][slot_num] = {}
 
     def _write(self, bucketname, filename, content, type='text/plain'):
@@ -259,6 +259,9 @@ class StorageEngine(object):
 
 class RevisionEngine(StorageEngine):
 
+    def __init__(self, bucket_name=None, db_ctrl=None, version=0):
+        return super().__init__(bucket_name=bucket_name,db_ctrl=db_ctrl,version=version,text_type="revision")
+
     def _write(self, bucketname, filename, content, type='text/plain'):
         return super()._write(bucketname, "revisions/"+filename, content, type)
 
@@ -266,6 +269,9 @@ class RevisionEngine(StorageEngine):
         return super()._read(bucketname, "revisions/"+filename)
 
 class TextReputationEngine(StorageEngine):
+
+    def __init__(self, bucket_name=None, db_ctrl=None, version=0):
+        return super().__init__(bucket_name=bucket_name,db_ctrl=db_ctrl,version=version,text_type="trust")
 
     def _write(self, bucketname, filename, content, type='text/plain'):
         return super()._write(bucketname, "text_reputation/"+filename, content, type)

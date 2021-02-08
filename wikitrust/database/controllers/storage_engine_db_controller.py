@@ -57,3 +57,13 @@ class storage_engine_db_controller:
     @autocommit
     def insert_blob_name(self, rev_id:int, page_id: int, version_id:int, blob_name:str, text_type:str):
         self.storage_table.insert(rev_id=rev_id, version=version_id, page_id = page_id, blob=blob_name, text_type=text_type)
+
+    """
+    DEBUG Function to print the whole storage table
+    """
+    def print_storage_table(self):
+        # Returns
+        blob_list = self.db().select(self.storage_table.ALL)
+        if blob_list == None or len(blob_list) == 0:
+            return print("storage table empty")
+        print(blob_list)

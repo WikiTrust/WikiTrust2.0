@@ -34,18 +34,18 @@ def test_storage_engine():
     # se.store(page_id=31774937, version_id="2", rev_id=941817554, text="Second One", timestamp=datetime.now(), kind="stuff")
     # se.store(page_id=31774937, version_id="2", rev_id=933170168, text="Third 1ne", timestamp=datetime.now(), kind="stuff")
     # print(se.read(page_id=31774937, version_id="2", rev_id=933170168))
-    
 
-    with RevisionEngine(bucket_name='wikitrust-testing', num_revs_per_slot=3, db_ctrl=db_ctrl, version=1) as se:
+
+    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=db_ctrl, version=1) as se:
         se.store(page_id=31774937, rev_id=429099416, text="2nd", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=429097598, text="0th", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=442457383, text="51th", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=429097648, text="1st", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=442400879, text="50th", timestamp=datetime.now())
-        
+
         print(se.read(page_id=31774937, rev_id=442400879))
-   
-    with RevisionEngine(bucket_name='wikitrust-testing', num_revs_per_slot=3, db_ctrl=db_ctrl, version=1) as se:
+
+    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=db_ctrl, version=1) as se:
         se.store(page_id=31774937, rev_id=429102121, text="3rd", timestamp=datetime.now())
         print("------------------------------")
         print("second is: %s" % se.read(page_id=31774937, rev_id=429099416))
