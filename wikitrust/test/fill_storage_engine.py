@@ -34,8 +34,8 @@ def fill_storage_engine():
 
     db_ctrl.print_storage_table()
 
-    for rev_iter in range(10): # int(json_object["size"])
-        rev_id = json_object["revisions"][rev_iter]["revisionId"]
-        print("reading: "+str(rev_id))
-        print(tte.read(page_id=page_id, rev_id=rev_id))
+    # for rev_iter in range(10): # int(json_object["size"])
+    #     rev_id = json_object["revisions"][rev_iter]["revisionId"]
+    #     print("reading: "+str(rev_id))
+    #     print(tte.read(page_id=page_id, rev_id=rev_id))
         # ^ON Second thought How is this working at all? tte is out of scope.
