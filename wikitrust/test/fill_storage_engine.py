@@ -23,7 +23,7 @@ def fill_storage_engine():
     page_id = int(json_object["pageId"])
     with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=db_ctrl, version=1) as re:
         with TextReputationEngine(bucket_name='wikitrust-testing', db_ctrl=db_ctrl, version=1) as tte:
-            for rev_iter in range(3): # int(json_object["size"])
+            for rev_iter in range(10): # int(json_object["size"])
                 rev_id = json_object["revisions"][rev_iter]["revisionId"]
                 rev_text = json_object["revisions"][rev_iter]["text"]
                 re.store(page_id=page_id, rev_id=rev_id, text=rev_text,timestamp=datetime.now())
@@ -34,7 +34,7 @@ def fill_storage_engine():
 
     db_ctrl.print_storage_table()
 
-    for rev_iter in range(3): # int(json_object["size"])
+    for rev_iter in range(10): # int(json_object["size"])
         rev_id = json_object["revisions"][rev_iter]["revisionId"]
         print("reading: "+str(rev_id))
         print(tte.read(page_id=page_id, rev_id=rev_id))
