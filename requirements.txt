@@ -1,0 +1,16 @@
+google-api-core==1.22.4
+google-api-python-client==1.12.3
+google-auth==1.22.1
+google-auth-httplib2==0.0.4
+google-cloud==0.34.0
+google-cloud-core==1.4.3
+google-cloud-storage==1.32.0
+google-crc32c==1.0.0
+google-resumable-media==1.1.0
+googleapis-common-protos==1.52.0
+pydal==20200910.1
+pylint==2.6.0
+requests==2.24.0
+rsa==4.6
+safelog==1.7
+mysql-connector-python==8.0.22

@@ -4,10 +4,10 @@ from datetime import date
 from wikitrust.database.controllers.create_entry import create_entry  as create
 import wikitrust.database.db_schema as db_schema
 from wikitrust.database.controllers.db_wrappers import autocommit
-import logging 
+import logging
 
 
-class computation_engine_db_controller: 
+class computation_engine_db_controller:
     def __init__(self, uri = 'sqlite://storage.sqlite'):
         self.db = db_schema.connect_to_db(uri)
         self.create = create(self.db)
@@ -15,14 +15,19 @@ class computation_engine_db_controller:
     def populate_prev_rev(self, page_id):
         all_revs = self.db(self.db.revision.page_id == page_id).iterselect(orderby=self.db.revision.rev_id)
         prev2 = None
-        for rev in all_revs:
+        for i,rev in enumerate(all_revs):
             prev = rev
-            rev.prev_rev = prev2
+            rev.rev_idx = i
+            if(prev2):
+                rev.prev_rev = prev2.rev_id
+                prev2.next_rev = rev.rev_id
+                prev2.update_record()
             rev.update_record()
             self.db.commit()
-            prev2 = prev.rev_id
+            prev2 = prev
+
         print("Previous Revision Field Populated")
-    
+
     #parameters: rev_id
     #return previous revision id
     def get_prev_rev(self, rev_id):
@@ -80,7 +85,7 @@ class computation_engine_db_controller:
         #rev 1 to rev 3 distance
         self.create.create_text_distance(version, revs[0], revs[2], distances[2])
         return ret
-    
+
     #parameters: triangle.id, reputation
     #return: triangle.id
     def update_triangle_rep(self, id, rep):
@@ -89,7 +94,7 @@ class computation_engine_db_controller:
         triangle.update_record()
         self.db.commit()
         return id
-        
+
     #parameters: version, page_id
     #return all triangle id's (in chronological order by rev_id_2)
     def get_all_triangles_chronological(self, version, page_id):
@@ -100,7 +105,7 @@ class computation_engine_db_controller:
         for row in all_triangles:
             all_triangle_ids.append(row.id)
         return all_triangle_ids
-    
+
     #parameters: page_id
     #return all revision ids
     def get_all_revisions(self, page_id):
@@ -117,16 +122,16 @@ class computation_engine_db_controller:
         x = self.db.revision.rev_id == rev_id
         ret = self.db(x).select(self.db.revision.text_retrieved).first().text_retrieved
         return ret
-    
+
     #parameters: version, stage, page_id, revision
-    #return 
+    #return
     def update_revision_log(self, version, stage, page_id, rev):
         x = self.db.revision_log.version == version
         y = self.db.revision_log.page_id == page_id
         rev_log = self.db(x & y).select().first()
         if(rev_log == None):
             rev_log = self.create.create_revision_log(version, stage, page_id, rev, date.today())
-        else: 
+        else:
             rev_log.stage = stage
             rev_log.last_rev = rev
             rev_log.lock_date = date.today()

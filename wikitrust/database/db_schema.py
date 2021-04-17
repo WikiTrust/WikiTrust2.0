@@ -12,7 +12,7 @@
 #from configuration import config
 import datetime
 import traceback
-import logging 
+import logging
 
 #from safelog import Log
 from pydal.migrator import InDBMigrator
@@ -37,7 +37,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # Plain text name for the environment.
             Field('environment_name', unique = True)
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -52,7 +52,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # There may be more revisions after this date that we do not know about.
             Field('last_check_time', 'datetime'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -63,7 +63,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             Field('user_id', 'integer', unique = True),
             Field('user_name'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -74,20 +74,32 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             Field('rev_id', 'integer', unique = True),
             Field('page_id', 'integer'),
             Field('user_id', 'integer'),
+
             # Datetime this revision was made on Wikipedia.
             Field('rev_date', 'datetime'),
+
+            # The revision before this one on the page.
+            # None if first revision for a page.
+            Field('next_rev', 'integer'),
+
             # The revision before this one on the page.
             # None if first revision for a page.
             Field('prev_rev', 'integer'),
+
+            # POTENTIALLY REDUNDANT: Index used for storage_engine blob population
+            Field('rev_idx', 'integer'),
+
             # True means retrieved, False means not retrieved.
             Field('text_retrieved', 'boolean'),
+
             # Datetime of last attempt to retrieve revision.
             # Can also be a successful attempt.
             Field('last_attempt_date', 'datetime'),
+
             # Number of attempts made to get markup from Wikipedia.
             Field('num_attempts', 'integer'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -108,7 +120,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # If null or old the page is not locked.
             Field('lock_date', 'datetime'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -124,7 +136,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # Double containing the reuptation of the user.
             Field('reputation_value', 'double'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -141,7 +153,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # Name of GCS blob where info is stored.
             Field('blob'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -162,7 +174,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # This enables triangles to be processed twice. (Check that we can query for null numbers).
             Field('reputation_inc', 'double'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -179,7 +191,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # Text version of text_diff tuples between rev_id_1 and rev_id_2
             Field('info', 'text')
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     try:
@@ -195,7 +207,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # Numerical distance between rev_id_1 and rev_id_2.
             Field('distance', 'double'),
         )
-    except: 
+    except:
         logging.debug(traceback.format_exc())
 
     return db

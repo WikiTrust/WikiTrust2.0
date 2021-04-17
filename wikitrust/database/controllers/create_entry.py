@@ -15,7 +15,7 @@ class create_entry:
 
     @autocommit
     def create_environment(
-        self, 
+        self,
         environment_name = ''
     ):
         try:
@@ -27,10 +27,10 @@ class create_entry:
 
     @autocommit
     def create_page(
-        self, 
-        page_id=-1, 
-        environment_id = None, 
-        page_title = "", 
+        self,
+        page_id=-1,
+        environment_id = None,
+        page_title = "",
         last_check_time = None
     ):
         try:
@@ -41,8 +41,8 @@ class create_entry:
             return self.db(self.db.page.page_id == page_id).select(self.db.page.id).first()
     @autocommit
     def create_user(
-        self, 
-        user_id=-1, 
+        self,
+        user_id=-1,
         user_name=''
     ):
         try:
@@ -55,18 +55,20 @@ class create_entry:
 
     @autocommit
     def create_revision(
-        self, 
-        rev_id = -1, 
-        page_id = -1, 
-        user_id = -1, 
-        rev_date = None, 
-        prev_rev = -1, 
-        text_retrieved = 'T', 
-        last_attempt_date = None, 
+        self,
+        rev_id = -1,
+        page_id = -1,
+        user_id = -1,
+        rev_date = None,
+        next_rev = -1,
+        prev_rev = -1,
+        rev_idx = -1,
+        text_retrieved = 'T',
+        last_attempt_date = None,
         num_attempts = -1,
     ):
         try:
-            ret = self.db.revision.insert(rev_id = rev_id, page_id = page_id, user_id = user_id, rev_date = rev_date, prev_rev = prev_rev, text_retrieved = text_retrieved, last_attempt_date = last_attempt_date, num_attempts = num_attempts)
+            ret = self.db.revision.insert(rev_id = rev_id, page_id = page_id, user_id = user_id, rev_date = rev_date, next_rev = next_rev, prev_rev = prev_rev, rev_idx = rev_idx, text_retrieved = text_retrieved, last_attempt_date = last_attempt_date, num_attempts = num_attempts)
             return ret
         except:
             self.db.rollback()
@@ -74,11 +76,11 @@ class create_entry:
 
     @autocommit
     def create_revision_log(
-        self, 
-        version = '', 
-        stage = '', 
-        page_id = -1, 
-        last_rev = None, 
+        self,
+        version = '',
+        stage = '',
+        page_id = -1,
+        last_rev = None,
         lock_date = None
     ):
         x = self.db.revision_log.version == version
@@ -91,10 +93,10 @@ class create_entry:
 
     @autocommit
     def create_user_reputation(
-        self, 
-        version = '', 
-        user_id = -1, 
-        environment = None, 
+        self,
+        version = '',
+        user_id = -1,
+        environment = None,
         reputation_value = 0
     ):
         x = self.db.user_reputation.version == version
@@ -108,8 +110,8 @@ class create_entry:
 
     @autocommit
     def create_text_storage(
-        self, 
-        version = '', 
+        self,
+        version = '',
         page_id = -1,
         rev_id = -1,
         text_type = '',
@@ -144,7 +146,7 @@ class create_entry:
 
     @autocommit
     def create_text_distance(
-        self, 
+        self,
         version = '',
         rev_id_1 = -1,
         rev_id_2 = -1,
@@ -158,4 +160,4 @@ class create_entry:
             ret = self.db.text_distance.insert(version = version, rev_id_1 = rev_id_1, rev_id_2 = rev_id_2, distance = distance)
             return ret
         return q
-        
+
