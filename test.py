@@ -11,17 +11,17 @@ def db_population_test():
     db_test.drop_and_populate()
 
 if __name__ == '__main__':
-    # ce_test.test_computation_engine()
+    ce_test.test_computation_engine()
 
 
-    os.system("del storage.sqlite")
-    os.system("rm storage.sqlite")
+    #os.system("del storage.sqlite")
+    #os.system("rm storage.sqlite")
 
-    db_population_test()
-    storage_fill.fill_storage_engine()
+    #db_population_test()
+    #storage_fill.fill_storage_engine()
     # storage_test.test_storage_engine()
     # db = db_schema.connect_to_db()
     # print(db)
     # print(db.text_storage)
-    trust_viz.text_trust_visualization_server().run()
+    #trust_viz.text_trust_visualization_server().run()
 
