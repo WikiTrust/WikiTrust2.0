@@ -1,3 +1,4 @@
+import * as interfaces from './interfaces';
 import * as consts from './consts';
 import * as UI from './ui';
 import { injectTooltip } from './tooltip';
@@ -12,8 +13,8 @@ This script is the entry point for everything, it calls each of the steps (found
 Once bundled into a single JS script, this will be injected into all pages on the wikipedia domain by the browser extension or injected by the bookmarklet.
 This doesn't depend on any libraries or files outside of the bundle & core folder, so it should function on its own (outside of an extension).
 
-Note: All of this will get put into an annonoumous function by Parcel which will avoid putting our
-variables (except those explicitly defined on window) in the Wikipedia page's scope - so they dont
+Note: All of this will get put into an annonoumous function by Parcel which means our
+variables (except those explicitly defined on window) don't go in the Wikipedia page's js scope - so they dont
 interfere with Wikipedia's own javascript.
 */
 
@@ -30,7 +31,7 @@ const findMax = (arr: number[]) => {
  * @param word_list - An array of strings of every word in the current article in order.
  * @returns an object with a scores array and words array where the Nth score corresponds to the Nth word
  * The words & scores array has some words missing and some goblygook inserted to simulate an in-exact match
- * beteween the algorithim output and page content */
+ * beteween the server's trust algorithim output and page content */
 const generateFakeScores = (word_list: string[]) => {
   return new Promise<{ words: string[]; scores: number[] }>(resolve => {
     const output: { words: string[]; scores: number[] } = {
@@ -39,17 +40,28 @@ const generateFakeScores = (word_list: string[]) => {
     };
     for (let i = 0; i < word_list.length; i++) {
       const randomNumber = Math.round(Math.random() * 10);
-      if (randomNumber === 2) continue;
+      if (randomNumber === 2) continue; // skip this word
       else if (randomNumber === 3) {
-        output.words.push('goblygook');
+        output.words.push('goblygook'); // insert junk word
       } else {
-        output.words.push(word_list[i]);
+        output.words.push(word_list[i]); // otherwise use the actual word
       }
       output.scores.push(Math.sin(i * 0.04));
     }
     resolve(output);
   });
 };
+
+const getWikipediaPageMetaData = () => {
+  let revId = window.RLCONF.wgCurRevisionId
+  if(!revId) revId = window.RLCONF.wgRevisionId
+
+  const output: interfaces.PageMetaData = {
+    'revId': revId,
+    'pageId': window.RLCONF.wgArticleId,
+  }
+  return output;
+}
 
 const setupWikiTrust = () => {
   injectTooltip();
@@ -135,3 +147,4 @@ if (completionStage === consts.COMPLETION_STAGES.just_loaded) {
 // http://kathack.com/js/kh.js
 // https://stackoverflow.com/questions/10730309/find-all-text-nodes-in-html-page
 // https://stackoverflow.com/questions/31275446/how-to-wrap-part-of-a-text-in-a-node-with-javascript
+// https://en.wikipedia.org/wiki/Special:ApiSandbox#action=query&format=json&prop=revisions&continue=&titles=List_of_common_misconceptions&redirects=1&rvprop=ids

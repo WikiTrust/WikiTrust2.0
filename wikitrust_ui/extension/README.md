@@ -28,8 +28,8 @@
 
 2. Bundle the typescript into js:
 
-   - Run: `npm run auto_build` which will automatically recompile your ts as it changes (you'll still need to reload the browser extensions manually)
-   - Or run: `npm run prod_build` to make a one-time compressed/minified version that we'll actually publish.
+   - Run: `npm run auto_build` (in the extension folder) which will automatically recompile your ts as it changes (you'll still need to reload the browser extensions manually)
+   - Or run: `npm run prod_build` to make a one-time minified version that we'll actually publish.
 
 3. Install the extension...
 

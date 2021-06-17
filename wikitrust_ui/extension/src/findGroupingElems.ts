@@ -16,10 +16,11 @@ const allowedGroupingTags: { [tagName: string]: boolean } = {
   section: true,
 };
 
-// -- check Element For Excluded Class:
-const hasClass = (element: HTMLElement, className: string) =>
-  ` ${element.className} `.indexOf(` ${className} `) !== -1;
-// looks for the className in the element's classes string (the spaces ensure only full class names not just a part of the class name is matched).
+// -- check if an html element has the passed name in its class parameter (used to check whether an Element has an Class Name that we want to exclude):
+const hasClass = (element: HTMLElement, className: string) => {
+  // looks for the className in the element's classes string (the spaces ensure only full class names, not just a part of the class name is matched).
+  return ` ${element.className} `.indexOf(` ${className} `) !== -1;
+}
 
 /**
  * Returns all the child elements of the parent that pass filters.

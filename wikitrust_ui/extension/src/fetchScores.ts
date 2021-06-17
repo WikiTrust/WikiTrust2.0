@@ -4,7 +4,7 @@
  * Expects the api to return json in the format: { Words: ['the','brown','fox'],Scores: [1.5,2,8]}
  * Where the Nth word is the nth word in the wikipedia page & the nth score corresponds to the nth word.
  *
- * @returns a promise which resolves with the object representation of the parsed JSON returned by the API
+ * @returns a promise which resolves with the parsed JSON returned by the API
  *  */
 export const fetchScores = () => {
   const h = setTimeout(() => {
