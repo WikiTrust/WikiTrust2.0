@@ -23,6 +23,7 @@ lastRevisionWikiText = RP.get_text_of_old_revision(dogPage, lastRevId)
 
 # To parse the WikiText in a simple way use "getReadableText(WikiText)"
 lastRevisionReadable = processor.getReadableText(lastRevisionWikiText)
+print(lastRevisionReadable)
 
 
 # To get the WikiText of the most recent revision do "[page object].text"
@@ -31,4 +32,5 @@ currentRevisionReadable = processor.getReadableText(currentRevisionWikiText)
 
 # To get the revisions between two revisions use get_revisions_between()
 firstRev = RP.get_latest_revisions(dogPage, recent_to_oldest=False, num_revisions=1)[0]
-rev_list = RP.get_revisions_between(dogPage, revision1=firstRev, revision2=lastRev, recent_to_oldest=False)
+#print(firstRev.text)
+# rev_list = RP.get_revisions_between(dogPage, revision1=firstRev, revision2=lastRev, recent_to_oldest=False)

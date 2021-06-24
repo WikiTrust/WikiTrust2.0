@@ -1,7 +1,7 @@
 import pywikibot
-import RevisionPuller as RP
-import SearchEngine as SE
-import PageProcessor as PP
+import wikitrust.revision_puller.RevisionPuller as RP
+import wikitrust.revision_puller.SearchEngine as SE
+import wikitrust.revision_puller.PageProcessor as PP
 
 engine = SE.SearchEngine()
 processor = PP.PageProcessor()

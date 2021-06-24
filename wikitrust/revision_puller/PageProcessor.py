@@ -1,6 +1,6 @@
 import pywikibot, mwparserfromhell
-import RevisionPuller as RP
-import SearchEngine as SE
+import wikitrust.revision_puller.RevisionPuller as RP
+import wikitrust.revision_puller.SearchEngine as SE
 
 class PageProcessor:
 
