@@ -1,6 +1,6 @@
 import datetime
 import pywikibot
-import SearchEngine as SE
+import wikitrust.revision_puller.SearchEngine as SE
 
 
 def get_latest_revisions(page:pywikibot.page.Page, recent_to_oldest:bool=True, num_revisions=None, start_time:pywikibot.Timestamp=None, end_time:pywikibot.Timestamp=None):
