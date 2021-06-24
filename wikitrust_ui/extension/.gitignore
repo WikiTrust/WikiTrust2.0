@@ -1,7 +1,12 @@
 core/WikiTrust.js
 core/WikiTrust.js.map
 
+#parcel
+.cache
+.parcel-cache
+
 # ---- General Nodejs Ignore [from github.com/gitignore] -----
+
 
 # Logs
 logs

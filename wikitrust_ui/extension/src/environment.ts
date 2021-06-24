@@ -44,3 +44,12 @@ export const getAsset = (relativePath: string) => {
     );
   } else return extensionSpecificAPIs.getURL(relativePath);
 };
+
+export const runFunctionInPageContext = (fn: Function) => {
+  if (envIsBookmarklet()) fn();
+  else if (ENVIRONMENT === consts.ENVIRONMENTS.chrome_extension) {
+    const script = document.createElement('script');
+    script.text = `(${fn.toString()})();`;
+    document.documentElement.appendChild(script);
+  }
+};

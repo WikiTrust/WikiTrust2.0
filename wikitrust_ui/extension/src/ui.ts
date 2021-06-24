@@ -67,14 +67,14 @@ export const addTextGroupMark = (
   markElement.style.height = height + 'px';
   markElement.classList.add('wt-text-side-group-mark');
   markElement.style.backgroundColor = getColorForPercentage(score, 1);
-  markElement.onmouseenter = e => {
+  markElement.onmouseenter = (e) => {
     groupingElement.classList.remove('trust-hidden');
     showTooltipAtElement(
       markElement,
       'Max Score: ' + Math.round(score * 1000) / 1000
     );
   };
-  markElement.onmouseleave = e => {
+  markElement.onmouseleave = (e) => {
     groupingElement.classList.add('trust-hidden');
     hideTooltip();
   };

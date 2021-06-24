@@ -57,7 +57,7 @@ const insertWordChunk = (textNode: Node, wordChunk: string, score: number) => {
   wordChunkElement.textContent = wordChunk;
   wordChunkElement.className = 'wt-word-chunk';
   wordChunkElement.setAttribute('trust', score.toString()); // for debug
-  wordChunkElement.onmouseover = e => {
+  wordChunkElement.onmouseover = (e) => {
     showTooltipAtElement(
       wordChunkElement,
       'Scaled Score:</br>' + Math.round(score * 1000) / 1000

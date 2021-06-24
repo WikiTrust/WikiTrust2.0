@@ -8,17 +8,24 @@ interface WikiTrustGlobalVars {
 declare global {
   interface Window {
     WikiTrustGlobalVars: WikiTrustGlobalVars;
-    RLCONF: { // some metadata object wikipedia's js puts in the global scope
-      wgCurRevisionId: Number, // the latest? rev id
-      wgRevisionId: Number, // the rev id of the page we're looking at
-      wgArticleId: Number, // the page id
-    }
+    RLCONF: {
+      // some metadata object wikipedia's js puts in the global scope
+      wgCurRevisionId: number; // the latest? rev id
+      wgRevisionId: number; // the rev id of the page we're looking at
+      wgArticleId: number; // the page id
+    };
   }
 }
 
 export interface PageMetaData {
-  revId: Number,
-  pageId: Number
+  revId: number;
+  pageId: number;
+}
+
+export interface serverScoresResponse {
+  words: string[];
+  scores: number[];
+  error?: string;
 }
 
 interface ColorObject {

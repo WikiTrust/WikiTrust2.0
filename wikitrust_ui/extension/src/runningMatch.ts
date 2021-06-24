@@ -21,7 +21,7 @@ let wordMatchIndicieDictionary: {
   [wordKey: string]: [number[], number[]];
 } = {};
 
-enum wordOrigin {
+enum WordOrigin {
   source = 0,
   target = 1,
 }
@@ -35,7 +35,7 @@ enum wordOrigin {
 const addWordIndexToIndicieDictionary = (
   word: string,
   index: number,
-  wordOrigin: wordOrigin
+  wordOrigin: WordOrigin
 ) => {
   if (wordMatchIndicieDictionary[word] === undefined) {
     wordMatchIndicieDictionary[word] = [[], []];
@@ -50,7 +50,7 @@ const addWordIndexToIndicieDictionary = (
  */
 const getWordIndeciesFromDictionary = (
   word: string,
-  wordOrigin: wordOrigin
+  wordOrigin: WordOrigin
 ) => {
   return wordMatchIndicieDictionary[word][wordOrigin] || [];
 };
@@ -96,7 +96,7 @@ const checkCrossMatch = (currSourceWord: string, currTargetWord: string) => {
   // Try to find indecies where the current target word shows up in the sourceWordList:
   const matchingSourceIndecies = getWordIndeciesFromDictionary(
     currTargetWord,
-    wordOrigin.source
+    WordOrigin.source
   );
   console.log('Source Match:' + currTargetWord, matchingSourceIndecies);
   for (let u = 0; u < matchingSourceIndecies.length; u++) {
@@ -110,7 +110,7 @@ const checkCrossMatch = (currSourceWord: string, currTargetWord: string) => {
   // Try to find indecies where the current source word shows up in the targetWordList:
   const matchingTargetIndecies = getWordIndeciesFromDictionary(
     currSourceWord,
-    wordOrigin.target
+    WordOrigin.target
   );
   console.log('Target Match:' + currSourceWord, matchingTargetIndecies);
   for (let u = 0; u < matchingTargetIndecies.length; u++) {
@@ -150,12 +150,12 @@ export const getWordMatchMapping = (
       addWordIndexToIndicieDictionary(
         currSourceWord,
         sourceWordIndex,
-        wordOrigin.source
+        WordOrigin.source
       );
       addWordIndexToIndicieDictionary(
         currTargetWord,
         targetWordIndex,
-        wordOrigin.target
+        WordOrigin.target
       );
       if (checkCrossMatch(currSourceWord, currTargetWord)) continue;
     }

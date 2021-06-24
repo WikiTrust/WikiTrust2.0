@@ -158,19 +158,19 @@
 
         function fetchRevisionTextTrust(revisionId) {
             currentRevisionId = revisionId
-            if (cache[revisionId] && cache[revisionId]['text']) {
-                globalMax = findGlobalMax(cache[revisionId]['trust']);
-                updateBody(cache[revisionId]['text'],cache[revisionId]['trust'])
+            if (cache[revisionId] && cache[revisionId]['words']) {
+                globalMax = findGlobalMax(cache[revisionId]['trust_values']);
+                updateBody(cache[revisionId]['words'], cache[revisionId]['trust_values'])
             } else {
                 container.innerHTML = "Getting Revision Text..."; // clear old elements;
                 fetch('/api?action=get_revision_text_trust&revision_id=' + revisionId).then(response => response.json()).then(data => {
                     console.log("Got revision (" + revisionId + ") text trust from server: ", data)
                     if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
                     globalMax = findGlobalMax(data.trust_values);
-                    updateBody(data.text, data.trust_values)
+                    updateBody(data.words, data.trust_values)
                     cache[revisionId] = cache[revisionId] || {};
-                    cache[revisionId]['text'] = data.text;
-                    cache[revisionId]['trust'] = data.trust_values;
+                    cache[revisionId]['words'] = data.words;
+                    cache[revisionId]['trust_values'] = data.trust_values;
                 });
             }
         }

@@ -76,14 +76,13 @@ class text_trust_visualization_server:
         pass
 
     def get_latest_text_trust (self,pageId) -> str:
-
-        return json.dumps({"this just in":pageId})
+        return json.dumps({"error":"API Unimplemented. Passed pageID:" + pageId})
 
     def get_revision_text_trust (self,revisionId) -> str:
         page_id = self.db_controller.get_page_from_rev(rev_id=revisionId)
         text_trust = self.text_trust_engine.read(page_id=page_id,rev_id=revisionId)
         text_string = self.rev_text_engine.read(page_id=page_id,rev_id=revisionId)
-        return json.dumps({"text":text_string.split(),"trust_values":json.loads(text_trust)})
+        return json.dumps({"words":text_string.split(),"trust_values":json.loads(text_trust)})
 
     def get_page_from_revision_id (self,revisionId) -> str:
         page_id = self.db_controller.get_page_from_rev(rev_id=revisionId)
@@ -137,7 +136,7 @@ class text_trust_visualization_server:
 
     def run(self,port=8000):
         # Server settings
-        # By default we use the localhost address (127.0.0.1) and the port 8080
+        # By default we use the localhost address (127.0.0.1) and the port 8000
         server_address = ('', port)
 
         requestHandler = MakeHandlerClassWithParameters(staticWebContentDirectory='./wikitrust/test/text_trust_vizualizer',apiHandlerClass=self)
@@ -145,5 +144,5 @@ class text_trust_visualization_server:
         print('Starting server...')
         httpd = HTTPServer(server_address, requestHandler)
 
-        print('Running server - open your browser to: http://localhost:'+ str(port))
+        print('Running server - open your browser to: http://localhost:'+ str(port) +' or (assuming the port is 8000) run the extension/bookmarklet on a wikipedia page')
         httpd.serve_forever()
