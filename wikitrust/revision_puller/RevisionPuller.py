@@ -1,7 +1,23 @@
-import datetime
+from datetime import datetime,timezone
+import logging
 import pywikibot
+logger = logging.getLogger('pywiki')
+logger.setLevel(logging.WARNING)
 import wikitrust.revision_puller.SearchEngine as SE
 
+
+def get_all_revisions(page:pywikibot.page.Page, recent_to_oldest:bool=True,):
+    """
+    Returns the last (num_revisions) revisions from a given Wikipedia page
+    If all revisions are desired use: get_latest_revisions(page)
+    :param page: A pywikibot.Page object that we want to grab the the revisions for
+    :param recent_to_oldest: Set to false if we want the revisions in order of oldest to most recent
+    :return: A list of pywikibot.page.Revision objects (dictionaries that store revisions by revid, text changed, timestamp, user, and comment)
+             Note that revisions starting earlier will be towards the end of the list
+    """
+    start_time = pywikibot.Timestamp.fromtimestamp(0)
+    end_time = pywikibot.Timestamp.fromtimestamp(datetime.now(tz=timezone.utc).timestamp())
+    return list(page.revisions(reverse=not recent_to_oldest, starttime=start_time, endtime=end_time))
 
 def get_latest_revisions(page:pywikibot.page.Page, recent_to_oldest:bool=True, num_revisions=None, start_time:pywikibot.Timestamp=None, end_time:pywikibot.Timestamp=None):
     """

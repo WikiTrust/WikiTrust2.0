@@ -6,7 +6,6 @@ import traceback
 from typing import Dict
 import zlib
 import collections
-from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
 from google.cloud import storage
 from threading import Lock
 
@@ -16,7 +15,7 @@ __num_revs_per_slot__ = 5
 
 class StorageEngine(object):
 
-    def __init__(self, bucket_name=None, db_ctrl=None, version=0, text_type="revision"):
+    def __init__(self, bucket_name=None, storage_db_ctrl=None, version=0, text_type="revision"):
         """
         :param db: handle to the pydal database to be used.
         :param num_objects_per_blob:
@@ -27,9 +26,7 @@ class StorageEngine(object):
         Another way is to provide the path to the json via:
         export GOOGLE_APPLICATION_CREDENTIALS="[PATH]"
         """
-        self.db_ctrl = db_ctrl
-        json_key = "private/gcs_credentials.json"
-        self.client = storage.Client.from_service_account_json(json_key)
+        self.storage_db_ctrl = storage_db_ctrl
         self.bucket_name = bucket_name
         self.num_revs_per_slot = __num_revs_per_slot__
         self.lock = Lock()
@@ -38,6 +35,9 @@ class StorageEngine(object):
         self.page_dict = {}
         self.version = version
         self.text_type = text_type
+
+        json_key = "private/gcs_credentials.json"
+        self.client = storage.Client.from_service_account_json(json_key)
 
         pass
 
@@ -57,12 +57,12 @@ class StorageEngine(object):
                 return False
 
             # Storage table query
-            rev_is_stored = self.db_ctrl.get_storage_blob_name(page_id=page_id,version_id=self.version,rev_id=rev_id,text_type=self.text_type)
+            rev_is_stored = self.storage_db_ctrl.get_storage_blob_name(page_id=page_id,version_id=self.version,rev_id=rev_id,text_type=self.text_type)
             if(rev_is_stored != None):
                 return False # Do not overwrite if a revision text with the givien version_id,page_id,rev_id exists
 
             # Revision table query
-            rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
+            rev_idx = self.storage_db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
             if rev_idx == None:
                 return False
 
@@ -74,7 +74,7 @@ class StorageEngine(object):
             if slot_num not in self.page_dict[page_id]:
                 self.page_dict[page_id][slot_num] = {}
 
-                if self.db_ctrl.count_revisions_in_blob(blob_name, self.text_type) > 0:
+                if self.storage_db_ctrl.count_revisions_in_blob(blob_name, self.text_type) > 0:
                     found_revs = self.read_all(page_id, rev_id, do_cache=True)
                     self.page_dict[page_id][slot_num] = found_revs
 
@@ -99,7 +99,7 @@ class StorageEngine(object):
         #     return {}
 
         # Revision table query
-        rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
+        rev_idx = self.storage_db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
         if rev_idx == None:
             return {}
 
@@ -124,7 +124,7 @@ class StorageEngine(object):
 
     def read(self, page_id: int, rev_id: int, do_cache=True) -> str:
         # Revision table query
-        rev_idx = self.db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
+        rev_idx = self.storage_db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
         if rev_idx == None:
             return {}
         slot_num = rev_idx//self.num_revs_per_slot
@@ -157,7 +157,7 @@ class StorageEngine(object):
             # Empties the memory list.
 
             for revision in self.page_dict[page][slot_num]:
-                self.db_ctrl.insert_blob_name(rev_id=revision, version_id=self.version, page_id=page, blob_name=blob_name, text_type=self.text_type)
+                self.storage_db_ctrl.insert_blob_name(rev_id=revision, version_id=self.version, page_id=page, blob_name=blob_name, text_type=self.text_type)
 
         self.page_dict[page][slot_num] = {}
 
@@ -259,8 +259,8 @@ class StorageEngine(object):
 
 class RevisionEngine(StorageEngine):
 
-    def __init__(self, bucket_name=None, db_ctrl=None, version=0):
-        return super().__init__(bucket_name=bucket_name,db_ctrl=db_ctrl,version=version,text_type="revision")
+    def __init__(self, bucket_name=None, storage_db_ctrl=None, version=0):
+        return super().__init__(bucket_name=bucket_name,storage_db_ctrl=storage_db_ctrl,version=version,text_type="revision")
 
     def _write(self, bucketname, filename, content, type='text/plain'):
         return super()._write(bucketname, "revisions/"+filename, content, type)
@@ -270,8 +270,8 @@ class RevisionEngine(StorageEngine):
 
 class TextReputationEngine(StorageEngine):
 
-    def __init__(self, bucket_name=None, db_ctrl=None, version=0):
-        return super().__init__(bucket_name=bucket_name,db_ctrl=db_ctrl,version=version,text_type="trust")
+    def __init__(self, bucket_name=None, storage_db_ctrl=None, version=0):
+        return super().__init__(bucket_name=bucket_name,storage_db_ctrl=storage_db_ctrl,version=version,text_type="trust")
 
     def _write(self, bucketname, filename, content, type='text/plain'):
         return super()._write(bucketname, "text_reputation/"+filename, content, type)

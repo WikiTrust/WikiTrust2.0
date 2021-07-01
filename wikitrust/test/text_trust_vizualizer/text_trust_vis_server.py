@@ -11,7 +11,6 @@ from wikitrust.storage_engine.storage_engine import TextReputationEngine
 from wikitrust.storage_engine.storage_engine import RevisionEngine
 
 
-__DBURI__ = "sqlite://storage.sqlite"
 __PAGEID__ = 31774937
 __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
 __ALGORITHM_VER__ = "0.1"
@@ -66,34 +65,33 @@ def MakeHandlerClassWithParameters(staticWebContentDirectory='./wikitrust/test/t
 
 
 class text_trust_visualization_server:
-    db_controller = database_controller.frontend_db_controller()
-    storage_db_controller = storage_engine_db_controller(uri=__DBURI__)
-    text_trust_engine = TextReputationEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_controller, version=1)
-    rev_text_engine = RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_controller, version=1)
-    current_revision_id = None
 
-    def __init__(self) -> None:
+    def __init__(self,storage_db_controller,frontend_db_ctrl) -> None:
+        self.current_revision_id = None
+        self.frontend_db_ctrl = frontend_db_ctrl
+        self.text_trust_engine = TextReputationEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_controller, version=1)
+        self.rev_text_engine = RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_controller, version=1)
         pass
 
     def get_latest_text_trust (self,pageId) -> str:
         return json.dumps({"error":"API Unimplemented. Passed pageID:" + pageId})
 
     def get_revision_text_trust (self,revisionId) -> str:
-        page_id = self.db_controller.get_page_from_rev(rev_id=revisionId)
+        page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
         text_trust = self.text_trust_engine.read(page_id=page_id,rev_id=revisionId)
         text_string = self.rev_text_engine.read(page_id=page_id,rev_id=revisionId)
         return json.dumps({"words":text_string.split(),"trust_values":json.loads(text_trust)})
 
     def get_page_from_revision_id (self,revisionId) -> str:
-        page_id = self.db_controller.get_page_from_rev(rev_id=revisionId)
+        page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
         return json.dumps({"page_id":page_id})
 
     def get_previous_revision_id (self,revisionId) -> str:
-        prev_rev_id = self.db_controller.get_prev_rev(rev_id=revisionId)
+        prev_rev_id = self.frontend_db_ctrl.get_prev_rev(rev_id=revisionId)
         return json.dumps({"rev_id":prev_rev_id})
 
     def get_next_revision_id (self,revisionId) -> str:
-        prev_rev_id = self.db_controller.get_next_rev(rev_id=revisionId)
+        prev_rev_id = self.frontend_db_ctrl.get_next_rev(rev_id=revisionId)
         return json.dumps({"rev_id":prev_rev_id})
 
     def get_query_parameter(self,params,key):

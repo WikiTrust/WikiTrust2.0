@@ -8,8 +8,8 @@ import logging
 
 
 class computation_engine_db_controller:
-    def __init__(self, uri = 'sqlite://storage.sqlite'):
-        self.db = db_schema.connect_to_db(uri)
+    def __init__(self,  db):
+        self.db = db
         self.create = create(self.db)
 
     def populate_prev_rev(self, page_id):

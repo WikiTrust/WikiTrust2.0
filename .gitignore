@@ -1,6 +1,11 @@
 *.pyc
 Test.db
 
+# --- PyWikiBot -----
+throttle.ctrl
+pywikibot.lwp
+apicache-py3/
+
 # ------- Secret Stuff (Keys etc...) ----------
 private/
 secrets/

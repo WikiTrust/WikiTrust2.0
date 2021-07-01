@@ -7,8 +7,6 @@ from wikitrust.storage_engine.storage_engine import RevisionEngine
 from wikitrust.storage_engine.storage_engine import TextReputationEngine
 from wikitrust.database.controllers.frontend_db_controller import frontend_db_controller
 
-import wikitrust.database.controllers.computation_engine_db_controller as db_controller
-
 import wikitrust.storage_engine.local_storage_engine as local_storage_engine
 import wikitrust.storage_engine.storage_engine as storage_engine
 
@@ -22,23 +20,20 @@ from datetime import datetime
 import json
 import math
 
-
-__DBURI__ = "sqlite://storage.sqlite"
 __PAGEID__ = 31774937
 __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
 __ALGORITHM_VER__ = "0.1"
 
-def test_computation_engine():
+def test_computation_engine(compute_db_ctrl,storage_db_ctrl,frontend_db_ctrl):
     # Initialize DB controller
     print("Populating DBController Database")
-    dbcontroller = drop_and_populate(__DBURI__)
-    storage_db_ctrl = storage_engine_db_controller(uri=__DBURI__)
-    frontend_db_controller_ = frontend_db_controller(uri=__DBURI__)
+
+    dbcontroller = drop_and_populate(compute_db_ctrl)
 
     # Initialize local text storage engine
     #text_storage_engine = local_storage_engine.LocalStorageEngine(db = None)
-    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as rse:
-        with TextReputationEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as tre:
+    with RevisionEngine(bucket_name='wikitrust-testing', storage_db_ctrl=storage_db_ctrl, version=1) as rse:
+        with TextReputationEngine(bucket_name='wikitrust-testing', storage_db_ctrl=storage_db_ctrl, version=1) as tre:
             print("Populating Revision Engine and Text Reputation Engine")
             with open(__PAGEJSON__, encoding="utf-8") as json_file:
                 json_object = json.load(json_file)
@@ -55,7 +50,7 @@ def test_computation_engine():
                     texttrusts.append(len(word))
                 tre.store(page_id=page_id, rev_id=rev_id, text=json.dumps(texttrusts),timestamp=datetime.now())
 
-            revision_list = frontend_db_controller_.get_all_revisions(__PAGEID__)
+            revision_list = frontend_db_ctrl.get_all_revisions(__PAGEID__)
             print("Revision Engine and Text Reputation Engine Populated")
 
             #Run Triangle generator

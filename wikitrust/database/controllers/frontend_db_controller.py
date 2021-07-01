@@ -7,8 +7,8 @@ from wikitrust.database.controllers.db_wrappers import autocommit
 import logging
 
 class frontend_db_controller:
-    def __init__(self, uri = 'sqlite://storage.sqlite'):
-        self.db = db_schema.connect_to_db(uri)
+    def __init__(self,  db):
+        self.db = db
 
     #parameters: rev_id
     #return previous revision id

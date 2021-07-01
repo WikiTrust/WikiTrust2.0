@@ -1,5 +1,4 @@
 from wikitrust.database.controllers.create_entry import create_entry
-from wikitrust.database.controllers.computation_engine_db_controller import computation_engine_db_controller as comp
 import json
 
 def drop_tables(db):
@@ -9,11 +8,10 @@ def drop_tables(db):
         print(table_name + "dropped")
     db.commit()
 #return controller
-def drop_and_populate(uri='sqlite://storage.sqlite'):
-    compu = comp(uri)
+def drop_and_populate(compute_db_ctrl):
     # drop_tables(compu.db)
-    populate(compu)
-    return compu
+    populate(compute_db_ctrl)
+    return compute_db_ctrl
 
 def populate(compu):
     create = compu.create

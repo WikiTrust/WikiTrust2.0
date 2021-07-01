@@ -8,13 +8,11 @@ from pydal.migrator import InDBMigrator
 from pydal import DAL, Field
 
 import random
-__DBURI__ = "sqlite://storage.sqlite"
 __PAGEID__ = 31774937
 __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
 __ALGORITHM_VER__ = "0.1"
 
-def test_storage_engine():
-    db_ctrl = storage_engine_db_controller(uri=__DBURI__)
+def test_storage_engine(storage_db_ctrl):
 
     randomInteger = random.randint(1, 50)
     print("storing revision with random page_id number = ",3)
@@ -36,7 +34,7 @@ def test_storage_engine():
     # print(se.read(page_id=31774937, version_id="2", rev_id=933170168))
 
 
-    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=db_ctrl, version=1) as se:
+    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as se:
         se.store(page_id=31774937, rev_id=429099416, text="2nd", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=429097598, text="0th", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=442457383, text="51th", timestamp=datetime.now())
@@ -45,7 +43,7 @@ def test_storage_engine():
 
         print(se.read(page_id=31774937, rev_id=442400879))
 
-    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=db_ctrl, version=1) as se:
+    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as se:
         se.store(page_id=31774937, rev_id=429102121, text="3rd", timestamp=datetime.now())
         print("------------------------------")
         print("second is: %s" % se.read(page_id=31774937, rev_id=429099416))
