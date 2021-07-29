@@ -1,5 +1,6 @@
 import os
 import json
+from wikitrust.revision_puller.RevisionsWrapper import convert_rev_to_table_row, get_rev_id
 
 # for database
 from wikitrust.database import db_schema
@@ -26,7 +27,6 @@ import wikitrust.test.text_trust_vizualizer.text_trust_vis_server as trust_viz
 
 __DBURI__ = "sqlite://storage.sqlite"
 
-
 if __name__ == '__main__':
     db = db_schema.connect_to_db(__DBURI__)
     storage_db_ctrl = storage_engine_db_controller(db)
@@ -39,17 +39,41 @@ if __name__ == '__main__':
     processor = PP.PageProcessor()
 
     # find a page
-    dogPage = engine.search("Dog", max_pages_grabbed=1, search_by="nearmatch")[0]
+    dogPage = engine.search("Dog", max_pages_grabbed=1,
+                            search_by="nearmatch")[0]
     print(dogPage)
 
     #get all revisions for that page
-    # all_revisions = RP.get_all_revisions(dogPage, recent_to_oldest=False)
+    all_revisions = RP.get_all_revisions(dogPage, recent_to_oldest=False)
+    rev_count = len(all_revisions)
+    rev_table_rows = []
+    for i, rev_object in enumerate(all_revisions):
+        prev_id = get_rev_id(all_revisions[i - 1]) if i > 0 else None
+        next_id = get_rev_id(
+            all_revisions[i + 1]
+        ) if i < rev_count - 1 else None
+        rev_table_row = convert_rev_to_table_row(
+            rev_object, dogPage, i, prev_id, next_id
+        )
+        rev_table_rows.append(rev_table_row)
+
+    rev_puller_db_ctrl.insert_revisions(rev_table_rows)
+    rev_puller_db_ctrl.print_revision_table()
+
     all_revisions_text = []
 
     # page_id = dogPage.pageid
-    with RevisionEngine(bucket_name='wikitrust-testing', storage_db_ctrl=storage_db_ctrl, version=1) as re:
-            with TextReputationEngine(bucket_name='wikitrust-testing', storage_db_ctrl=storage_db_ctrl, version=1) as tte:
-                pass
+    with RevisionEngine(
+        bucket_name='wikitrust-testing',
+        storage_db_ctrl=storage_db_ctrl,
+        version=1
+    ) as re:
+        with TextReputationEngine(
+            bucket_name='wikitrust-testing',
+            storage_db_ctrl=storage_db_ctrl,
+            version=1
+        ) as tte:
+            pass
     #             for revision in all_revisions:
     #                 rev_id = RP.getRevisionMetadata(revision, "revid")
     #                 rev_text = processor.getReadableText(RP.get_text_of_old_revision(dogPage, rev_id))
@@ -63,7 +87,9 @@ if __name__ == '__main__':
     storage_db_ctrl.print_storage_table()
 
     db_test.drop_and_populate(compute_db_ctrl)
-    ce_test.test_computation_engine(compute_db_ctrl,storage_db_ctrl,frontend_db_ctrl)
+    ce_test.test_computation_engine(
+        compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl
+    )
 
     storage_fill.fill_storage_engine(storage_db_ctrl)
     storage_test.test_storage_engine(storage_db_ctrl)
@@ -72,4 +98,3 @@ if __name__ == '__main__':
     print(db.text_storage)
 
     trust_viz.text_trust_visualization_server(storage_db_ctrl).run()
-

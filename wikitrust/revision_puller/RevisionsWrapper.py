@@ -6,8 +6,6 @@ import wikitrust.revision_puller.PageProcessor as PP
 engine = SE.SearchEngine()
 processor = PP.PageProcessor()
 
-
-
 def get_readable_text_of_old_revision(page_title:str, rev_id:int):
     """
     Returns a string containing a "readable" version of a revision
@@ -40,3 +38,23 @@ def get_rev_id(rev:pywikibot.page.Revision):
     :return: An integer corresponding to the revision id
     """
     return RP.getRevisionMetadata(rev, "revid")
+
+#TODO: UPdate this to be better about keeping track of attempts
+def convert_rev_to_table_row(rev:pywikibot.page.Revision,page:pywikibot.page,rev_idx:int,prev_rev_id:int,next_rev_id:int):
+    """
+    Outputs the revision dict matching the revision table db schema columns
+    :param rev: The revision object
+    :return: the page revision object outputed as a dict matching the revision table db schema columns
+    """
+    return {
+        "page_id":page.pageid,
+        "rev_id":RP.getRevisionMetadata(rev, "revid"),
+        "user_id":RP.getRevisionMetadata(rev, "userid"),
+        # "rev_date":RP.getRevisionMetadata(rev, "pageid"),
+        'next_rev':next_rev_id,
+        'prev_rev':prev_rev_id,
+        'rev_idx':rev_idx,
+        'text_retrieved':False,
+        'last_attempt_date':0,
+        'num_attempts':1.
+    }

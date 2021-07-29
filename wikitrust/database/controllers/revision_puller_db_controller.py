@@ -13,11 +13,22 @@ class revsion_puller_db_controller:
 
     @autocommit
     def insert_revisions(self, rev_formated_dict_arry):
-        for i, rev_object in enumerate(rev_formated_dict_arry):
-            # x = self.db.revision.page_id == page_id
-            # y = self.db.revision.rev_id == rev_id
-            # revision_row = self.db(x & y).select().first()
-            # revision_row.index = rep
-            # revision_row.update_record()
-            # rev_formated_dict_arry
-            self.db.revison.insert()
+        self.revision_table.bulk_insert(rev_formated_dict_arry)
+            # for i, rev_object in enumerate(rev_formated_dict_arry):
+            #     # x = self.db.revision.page_id == page_id
+            #     # y = self.db.revision.rev_id == rev_id
+            #     # revision_row = self.db(x & y).select().first()
+            #     # revision_row.index = rep
+            #     # revision_row.update_record()
+            #     # rev_formated_dict_arry
+            #     self.db.revison.insert()
+
+    """
+    DEBUG Function to print the whole revision table
+    """
+    def print_revision_table(self):
+        # Returns
+        blob_list = self.db().select(self.revision_table.ALL)
+        if blob_list == None or len(blob_list) == 0:
+            return print("rev table empty")
+        print(blob_list)
