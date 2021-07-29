@@ -1,16 +1,16 @@
 import pywikibot, mwparserfromhell
-import wikitrust.revision_puller.RevisionPuller as RP
-import wikitrust.revision_puller.SearchEngine as SE
+import wikitrust.revision_puller.RevisionPuller as WikiRevPuller
+import wikitrust.revision_puller.SearchEngine as WikiSearchEngine
+
+
 
 class PageProcessor:
-
-
-    def getSections(self, page:pywikibot.page.Page, headers=None, flat=True):
+    def getSections(self, page: pywikibot.page.Page, headers=None, flat=True):
         """[summary]
-        
+
         Arguments:
             page {pywikibot.page.Page} -- [description]
-            headers {list of strings} -- Only extracts sections with specified headers. None extracts all the sections. 
+            headers {list of strings} -- Only extracts sections with specified headers. None extracts all the sections.
             We also add edit term as many old articles has the word in headers. Users should add the synonyms.
             flat {boolean} -- flattens the sections.
         """
@@ -25,20 +25,21 @@ class PageProcessor:
             #then merge those two lists together
             all_possibles = headers + headers_edit
             headersRegex = '|'.join(all_possibles)
-            sections = wikiCode.get_sections(matches=headersRegex, include_headings=True, flat=flat)
-    
-        return sections
-    
+            sections = wikiCode.get_sections(
+                matches=headersRegex, include_headings=True, flat=flat
+            )
 
-    def naiveStrip(self, wikiCode:mwparserfromhell.wikicode.Wikicode):
+        return sections
+
+    def naiveStrip(self, wikiCode: mwparserfromhell.wikicode.Wikicode):
         """removes the code delimiter, keeps the text. Accepts pages and sections in Wikicode format
-        
+
         Arguments:
             wikiCode {mwparserfromhell.wikicode.Wikicode} -- wikicode for a page or a section.
         """
         return wikiCode.strip_code()
 
-    def getReadableText(self, wikiText:str):
+    def getReadableText(self, wikiText: str):
         """ Performs a naiveStrip on a string of wikiText and then passes the text through mwparserfromhell
         to be returned
 
@@ -48,11 +49,11 @@ class PageProcessor:
         wikiCode = mwparserfromhell.parse(wikiText)
         return self.naiveStrip(wikiCode)
 
-    def getLeadSection(self, page:pywikibot.page.Page):
+    def getLeadSection(self, page: pywikibot.page.Page):
         raise NotImplementedError
 
-    def getInfoBox(self, page:pywikibot.page.Page):
+    def getInfoBox(self, page: pywikibot.page.Page):
         raise NotImplementedError
 
-    def getCategories(self, page:pywikibot.page.Page):
+    def getCategories(self, page: pywikibot.page.Page):
         raise NotImplementedError

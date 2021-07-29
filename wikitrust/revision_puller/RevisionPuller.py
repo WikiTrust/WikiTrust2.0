@@ -3,7 +3,7 @@ import logging
 import pywikibot
 logger = logging.getLogger('pywiki')
 logger.setLevel(logging.WARNING)
-import wikitrust.revision_puller.SearchEngine as SE
+import wikitrust.revision_puller.SearchEngine as WikiSearchEngine
 
 
 def get_all_revisions(page:pywikibot.page.Page, recent_to_oldest:bool=True,):

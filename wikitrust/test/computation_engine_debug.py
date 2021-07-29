@@ -3,8 +3,8 @@ from wikitrust.test.fill_storage_engine import fill_storage_engine
 
 from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
 from wikitrust.storage_engine.storage_engine import StorageEngine
-from wikitrust.storage_engine.storage_engine import RevisionEngine
-from wikitrust.storage_engine.storage_engine import TextReputationEngine
+from wikitrust.storage_engine.storage_engine import RevisionStorageEngine
+from wikitrust.storage_engine.storage_engine import TextTrustStorageEngine
 from wikitrust.database.controllers.frontend_db_controller import frontend_db_controller
 
 import wikitrust.storage_engine.local_storage_engine as local_storage_engine
@@ -32,8 +32,16 @@ def test_computation_engine(compute_db_ctrl,storage_db_ctrl,frontend_db_ctrl):
 
     # Initialize local text storage engine
     #text_storage_engine = local_storage_engine.LocalStorageEngine(db = None)
-    with RevisionEngine(bucket_name='wikitrust-testing', storage_db_ctrl=storage_db_ctrl, version=1) as rse:
-        with TextReputationEngine(bucket_name='wikitrust-testing', storage_db_ctrl=storage_db_ctrl, version=1) as tre:
+    with RevisionStorageEngine(
+        bucket_name='wikitrust-testing',
+        storage_db_ctrl=storage_db_ctrl,
+        version=1
+    ) as rse:
+        with TextTrustStorageEngine(
+            bucket_name='wikitrust-testing',
+            storage_db_ctrl=storage_db_ctrl,
+            version=1
+        ) as tre:
             print("Populating Revision Engine and Text Reputation Engine")
             with open(__PAGEJSON__, encoding="utf-8") as json_file:
                 json_object = json.load(json_file)

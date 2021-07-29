@@ -1,10 +1,11 @@
 import pywikibot
-import wikitrust.revision_puller.RevisionPuller as RP
-import wikitrust.revision_puller.SearchEngine as SE
-import wikitrust.revision_puller.PageProcessor as PP
+import wikitrust.revision_puller.RevisionPuller as WikiRevPuller
+import wikitrust.revision_puller.SearchEngine as WikiSearchEngine
+import wikitrust.revision_puller.PageProcessor as WikiPageProcessor
 
-engine = SE.SearchEngine()
-processor = PP.PageProcessor()
+engine = WikiSearchEngine.SearchEngine()
+processor = WikiPageProcessor.PageProcessor()
+
 
 def get_readable_text_of_old_revision(page_title:str, rev_id:int):
     """
@@ -14,7 +15,10 @@ def get_readable_text_of_old_revision(page_title:str, rev_id:int):
     :return: A string of the revision's readable text
     """
     page = engine.search(page_title, 1, "nearmatch")[0]
-    return processor.getReadableText(RP.get_text_of_old_revision(page, rev_id))
+    return processor.getReadableText(
+        WikiRevPuller.get_text_of_old_revision(page, rev_id)
+    )
+
 
 def get_revisions(page_title:str, recent_to_oldest:bool=True, num_revisions=None, start_time:pywikibot.Timestamp=None, end_time:pywikibot.Timestamp=None):
     """
@@ -29,7 +33,7 @@ def get_revisions(page_title:str, recent_to_oldest:bool=True, num_revisions=None
              Note that revisions starting earlier will be towards the end of the list
     """
     page = engine.search(page_title, 1, "nearmatch")[0]
-    return RP.get_latest_revisions(page, recent_to_oldest=recent_to_oldest, num_revisions=num_revisions, start_time=start_time, end_time=end_time)
+    return WikiRevPuller.get_latest_revisions(page, recent_to_oldest=recent_to_oldest, num_revisions=num_revisions, start_time=start_time, end_time=end_time)
 
 def get_rev_id(rev:pywikibot.page.Revision):
     """
@@ -37,24 +41,48 @@ def get_rev_id(rev:pywikibot.page.Revision):
     :param rev: The revision object
     :return: An integer corresponding to the revision id
     """
-    return RP.getRevisionMetadata(rev, "revid")
+    return WikiRevPuller.getRevisionMetadata(rev, "revid")
+
+#TODO: Update this to be better about  ignoring already inerted revisions
+def tranform_pywikibot_revision_list_into_rev_table_schema_dicts(revision_list:list[pywikibot.page.Revision],page_id):
+    """
+    Outputs a list of revision dicts matching the revision table db schema columns
+    :param rev: The pywikibot revisions to process
+    :param page: The pywikibot page corresponding to these
+    :return: the page revision objects outputed as a list of dicts matching the revision table db schema columns
+    """
+    rev_count = len(revision_list)
+    rev_table_rows = []
+    # convert revisions into table format
+
+    for i, rev_object in enumerate(revision_list):
+        prev_id = get_rev_id(revision_list[i - 1]) if i > 0 else None
+        next_id = get_rev_id(
+            revision_list[i + 1]
+        ) if i < rev_count - 1 else None
+        rev_table_row = convert_rev_to_table_row(
+            rev_object, page_id, i, prev_id, next_id
+        )
+        rev_table_rows.append(rev_table_row)
+    return rev_table_rows
 
 #TODO: UPdate this to be better about keeping track of attempts
-def convert_rev_to_table_row(rev:pywikibot.page.Revision,page:pywikibot.page,rev_idx:int,prev_rev_id:int,next_rev_id:int):
+def convert_rev_to_table_row(rev:pywikibot.page.Revision,page_id:int,rev_idx:int,prev_rev_id:int,next_rev_id:int):
     """
     Outputs the revision dict matching the revision table db schema columns
-    :param rev: The revision object
+    :param rev: The pywikibot revision to process
+    :param page: The pywikibot page corresponding to this revision
     :return: the page revision object outputed as a dict matching the revision table db schema columns
     """
     return {
-        "page_id":page.pageid,
-        "rev_id":RP.getRevisionMetadata(rev, "revid"),
-        "user_id":RP.getRevisionMetadata(rev, "userid"),
-        # "rev_date":RP.getRevisionMetadata(rev, "pageid"),
-        'next_rev':next_rev_id,
-        'prev_rev':prev_rev_id,
-        'rev_idx':rev_idx,
-        'text_retrieved':False,
-        'last_attempt_date':0,
-        'num_attempts':1.
+        "page_id": page_id,
+        "rev_id": WikiRevPuller.getRevisionMetadata(rev, "revid"),
+        "user_id": WikiRevPuller.getRevisionMetadata(rev, "userid"),
+        "rev_date": WikiRevPuller.getRevisionMetadata(rev, "timestamp"),
+        'next_rev': next_rev_id,
+        'prev_rev': prev_rev_id,
+        'rev_idx': rev_idx,
+        'text_retrieved': False,
+        'last_attempt_date': 0,
+        'num_attempts': 1.
     }

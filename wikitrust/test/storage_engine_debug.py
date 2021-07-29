@@ -1,6 +1,6 @@
 from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
 from wikitrust.storage_engine.storage_engine import StorageEngine
-from wikitrust.storage_engine.storage_engine import RevisionEngine
+from wikitrust.storage_engine.storage_engine import RevisionStorageEngine
 import wikitrust.database.db_schema as schema
 import datetime
 from datetime import datetime
@@ -34,7 +34,7 @@ def test_storage_engine(storage_db_ctrl):
     # print(se.read(page_id=31774937, version_id="2", rev_id=933170168))
 
 
-    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as se:
+    with RevisionStorageEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as se:
         se.store(page_id=31774937, rev_id=429099416, text="2nd", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=429097598, text="0th", timestamp=datetime.now())
         se.store(page_id=31774937, rev_id=442457383, text="51th", timestamp=datetime.now())
@@ -43,7 +43,7 @@ def test_storage_engine(storage_db_ctrl):
 
         print(se.read(page_id=31774937, rev_id=442400879))
 
-    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as se:
+    with RevisionStorageEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as se:
         se.store(page_id=31774937, rev_id=429102121, text="3rd", timestamp=datetime.now())
         print("------------------------------")
         print("second is: %s" % se.read(page_id=31774937, rev_id=429099416))

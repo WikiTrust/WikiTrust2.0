@@ -7,8 +7,8 @@ import json, os
 import wikitrust.database.controllers.frontend_db_controller as database_controller
 import wikitrust.storage_engine.local_storage_engine as local_storage_engine
 from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
-from wikitrust.storage_engine.storage_engine import TextReputationEngine
-from wikitrust.storage_engine.storage_engine import RevisionEngine
+from wikitrust.storage_engine.storage_engine import TextTrustStorageEngine
+from wikitrust.storage_engine.storage_engine import RevisionStorageEngine
 
 
 __PAGEID__ = 31774937
@@ -31,7 +31,7 @@ def MakeHandlerClassWithParameters(staticWebContentDirectory='./wikitrust/test/t
             error("Error Handling HTTP request: " + errMsg)
             error(traceback.format_exc())
 
-            errJsonStr = json.dumps({"error":errMsg})
+            errJsonStr = json.dumps({"error":  errMsg})
             self.send_response(errorCode)
             self.send_header('Content-type', "application/json")
             self.end_headers()
@@ -69,30 +69,38 @@ class text_trust_visualization_server:
     def __init__(self,storage_db_controller,frontend_db_ctrl) -> None:
         self.current_revision_id = None
         self.frontend_db_ctrl = frontend_db_ctrl
-        self.text_trust_engine = TextReputationEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_controller, version=1)
-        self.rev_text_engine = RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_controller, version=1)
+        self.text_trust_engine = TextTrustStorageEngine(
+            bucket_name='wikitrust-testing',
+            db_ctrl=storage_db_controller,
+            version=1
+        )
+        self.rev_text_engine = RevisionStorageEngine(
+            bucket_name='wikitrust-testing',
+            db_ctrl=storage_db_controller,
+            version=1
+        )
         pass
 
     def get_latest_text_trust (self,pageId) -> str:
-        return json.dumps({"error":"API Unimplemented. Passed pageID:" + pageId})
+        return json.dumps({"error":  "API Unimplemented. Passed pageID:" + pageId})
 
     def get_revision_text_trust (self,revisionId) -> str:
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
         text_trust = self.text_trust_engine.read(page_id=page_id,rev_id=revisionId)
         text_string = self.rev_text_engine.read(page_id=page_id,rev_id=revisionId)
-        return json.dumps({"words":text_string.split(),"trust_values":json.loads(text_trust)})
+        return json.dumps({"words":  text_string.split(),"trust_values":  json.loads(text_trust)})
 
     def get_page_from_revision_id (self,revisionId) -> str:
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
-        return json.dumps({"page_id":page_id})
+        return json.dumps({"page_id":  page_id})
 
     def get_previous_revision_id (self,revisionId) -> str:
         prev_rev_id = self.frontend_db_ctrl.get_prev_rev(rev_id=revisionId)
-        return json.dumps({"rev_id":prev_rev_id})
+        return json.dumps({"rev_id":  prev_rev_id})
 
     def get_next_revision_id (self,revisionId) -> str:
         prev_rev_id = self.frontend_db_ctrl.get_next_rev(rev_id=revisionId)
-        return json.dumps({"rev_id":prev_rev_id})
+        return json.dumps({"rev_id":  prev_rev_id})
 
     def get_query_parameter(self,params,key):
         try:

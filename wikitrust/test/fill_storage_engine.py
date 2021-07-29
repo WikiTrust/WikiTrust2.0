@@ -1,6 +1,6 @@
 from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
-from wikitrust.storage_engine.storage_engine import TextReputationEngine
-from wikitrust.storage_engine.storage_engine import RevisionEngine
+from wikitrust.storage_engine.storage_engine import TextTrustStorageEngine
+from wikitrust.storage_engine.storage_engine import RevisionStorageEngine
 import wikitrust.database.db_schema as schema
 import datetime
 from datetime import datetime
@@ -19,8 +19,8 @@ def fill_storage_engine(storage_db_ctrl):
         json_object = json.load(json_file)
 
     page_id = int(json_object["pageId"])
-    with RevisionEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as re:
-        with TextReputationEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as tte:
+    with RevisionStorageEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as re:
+        with TextTrustStorageEngine(bucket_name='wikitrust-testing', db_ctrl=storage_db_ctrl, version=1) as tte:
             for rev_iter in range(10): # int(json_object["size"])
                 rev_id = json_object["revisions"][rev_iter]["revisionId"]
                 rev_text = json_object["revisions"][rev_iter]["text"]

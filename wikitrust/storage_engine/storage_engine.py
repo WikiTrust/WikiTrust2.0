@@ -133,7 +133,7 @@ class StorageEngine(object):
 
         db_data = self.read_all(page_id, rev_id, do_cache)
         if db_data == {}:
-           return ""
+             return ""
         else:
             return db_data[str(rev_id)]
 
@@ -257,7 +257,8 @@ class StorageEngine(object):
         return [blob.name for k, blob in enumerate(bucket.list_blobs())
                 if maximum is None or k < maximum]
 
-class RevisionEngine(StorageEngine):
+
+class RevisionStorageEngine(StorageEngine):
 
     def __init__(self, bucket_name=None, storage_db_ctrl=None, version=0):
         return super().__init__(bucket_name=bucket_name,storage_db_ctrl=storage_db_ctrl,version=version,text_type="revision")
@@ -268,7 +269,8 @@ class RevisionEngine(StorageEngine):
     def _read(self, bucketname, filename):
         return super()._read(bucketname, "revisions/"+filename)
 
-class TextReputationEngine(StorageEngine):
+
+class TextTrustStorageEngine(StorageEngine):
 
     def __init__(self, bucket_name=None, storage_db_ctrl=None, version=0):
         return super().__init__(bucket_name=bucket_name,storage_db_ctrl=storage_db_ctrl,version=version,text_type="trust")

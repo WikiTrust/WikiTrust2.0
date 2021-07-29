@@ -21,14 +21,16 @@
 
 ### How to Install & Run:
 
+1. Install [Node js](http://nodejs.org)
+
 1. Install NPM packages
 
-   - Go into the wikitrust_ui folder: `cd ./wikitrust_ui/extension`
+   - Go into the extension folder: `cd ./wikitrust_ui/extension`
    - Run: `npm install`
 
 2. Bundle the typescript into js:
 
-   - Run: `npm run auto_build` (in the extension folder) which will automatically recompile your ts as it changes (you'll still need to reload the browser extensions manually)
+   - Run: `npm run auto_build` (in the extension folder) which will automatically recompile the typescript source files as they change (you'll still need to reload the browser extensions manually)
    - Or run: `npm run prod_build` to make a one-time minified version that we'll actually publish.
 
 3. Install the extension...
