@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      margin: 0;
+      background: white;
+      font-family: sans-serif;
+    }
+
+    table {
+      width: 100vw;
+      height: 100vh;
+      border-spacing: 0;
+    }
+
+    .gradient {
+      position: relative;
+      /* fallback for old browsers */
+      background: #fc4a1a;
+      background: -webkit-linear-gradient(to right, #fc4a1a, #f7b733);
+      /* Chrome 10-25, Safari 5.1-6 */
+      background: linear-gradient(to right, #fc4a1a, #f7b733, #fef9ee);
+    }
+
+    .gradient span {
+      position: absolute;
+      display: inline-block;
+      top: 12px;
+    }
+
+    .toggle-container {
+      padding: 0 12px;
+      width: 120px;
+      border-left: 1px solid #a2a9b1;
+      text-align: left;
+    }
+  </style>
+  <!-- <script>
+
+    function sendMessageToParent(message) {
+      parent.postMessage(message, "*")
+    }
+
+    function toggleTrustVisibility(checkbox) {
+      if (checkbox.checked == true) {
+        sendMessageToParent("show_trust");
+      } else {
+        sendMessageToParent("hide_trust");
+      }
+    }
+  </script> -->
+</head>
+
+<body>
+  <table>
+    <tr>
+      <td class="gradient">
+        <span style="left: 12px;color:white">Double Check</span>
+        <span style="right: 12px;">Probably Accurate</span>
+      </td>
+      <!-- <td class="toggle-container">
+        <input type="checkbox" disabled checked onchange="toggleTrustVisibility(event.target)" />
+        <label>Show Trust</label>
+      </td> -->
+    </tr>
+  </table>
+</body>
+
+</html>
