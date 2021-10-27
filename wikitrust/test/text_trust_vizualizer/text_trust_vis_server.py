@@ -71,12 +71,12 @@ class text_trust_visualization_server:
         self.frontend_db_ctrl = frontend_db_ctrl
         self.text_trust_engine = TextTrustStorageEngine(
             bucket_name='wikitrust-testing',
-            db_ctrl=storage_db_controller,
+            storage_db_ctrl=storage_db_controller,
             version=1
         )
         self.rev_text_engine = RevisionStorageEngine(
             bucket_name='wikitrust-testing',
-            db_ctrl=storage_db_controller,
+            storage_db_ctrl=storage_db_controller,
             version=1
         )
         pass
@@ -87,8 +87,8 @@ class text_trust_visualization_server:
     def get_revision_text_trust (self,revisionId) -> str:
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
         text_trust = self.text_trust_engine.read(page_id=page_id,rev_id=revisionId)
-        text_string = self.rev_text_engine.read(page_id=page_id,rev_id=revisionId)
-        return json.dumps({"words":  text_string.split(),"trust_values":  json.loads(text_trust)})
+        text_words = self.rev_text_engine.read(page_id=page_id,rev_id=revisionId)
+        return json.dumps({"words":  json.loads(text_words),"trust_values":  json.loads(text_trust)})
 
     def get_page_from_revision_id (self,revisionId) -> str:
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)

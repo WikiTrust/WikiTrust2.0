@@ -31,7 +31,7 @@ class SearchEngine:
             pageList.append(page)
         return pageList
 
-    def getByPageID(self, page_ids:[]):
+    def getByPageID(self, page_id: int):
         """
         Searches a site for a page based on the page_id
         :param page_id: An integer corresponding to the page_id of the provided page
@@ -39,6 +39,7 @@ class SearchEngine:
         """
         #page_generator = self.source.load_pages_from_pageids(page_ids)
         #print(list(page_generator))
+        return self.source.load_pages_from_pageids([page_id])[0]
         raise NotImplementedError
 
 

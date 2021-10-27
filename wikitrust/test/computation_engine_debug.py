@@ -24,7 +24,8 @@ __PAGEID__ = 31774937
 __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
 __ALGORITHM_VER__ = "0.1"
 
-def test_computation_engine(compute_db_ctrl,storage_db_ctrl,frontend_db_ctrl):
+
+def test_computation_engine(compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl):
     # Initialize DB controller
     print("Populating DBController Database")
 
@@ -49,33 +50,52 @@ def test_computation_engine(compute_db_ctrl,storage_db_ctrl,frontend_db_ctrl):
 
             page_id = int(json_object["pageId"])
 
-            for rev_iter in range(10): # int(json_object["size"])
+            for rev_iter in range(10):  # int(json_object["size"])
                 rev_id = json_object["revisions"][rev_iter]["revisionId"]
                 rev_text = json_object["revisions"][rev_iter]["text"]
-                rse.store(page_id=page_id, rev_id=rev_id, text=rev_text,timestamp=datetime.now())
+                rse.store(
+                    page_id=page_id,
+                    rev_id=rev_id,
+                    text=rev_text,
+                    timestamp=datetime.now()
+                )
                 texttrusts = []
                 for word in rev_text.split():
                     texttrusts.append(len(word))
-                tre.store(page_id=page_id, rev_id=rev_id, text=json.dumps(texttrusts),timestamp=datetime.now())
+                tre.store(
+                    page_id=page_id,
+                    rev_id=rev_id,
+                    text=json.dumps(texttrusts),
+                    timestamp=datetime.now()
+                )
 
             revision_list = frontend_db_ctrl.get_all_revisions(__PAGEID__)
             print("Revision Engine and Text Reputation Engine Populated")
 
             #Run Triangle generator
             print("Starting Triangle Generator...")
-            tg = TriangleGenerator(dbcontroller, rse, __ALGORITHM_VER__, (3, chdiff.edit_diff_greedy, chdiff.make_index2))
+            tg = TriangleGenerator(
+                dbcontroller, rse, __ALGORITHM_VER__,
+                (3, chdiff.edit_diff_greedy, chdiff.make_index2)
+            )
             tg.compute_triangles_batch(__PAGEID__)
             print("Triangle Generator done\n")
 
             #Run Reputation generator
             print("Starting Reputation Generator...")
-            rg = ReputationGenerator(dbcontroller, __ALGORITHM_VER__, (0.5, (lambda x: math.log(1.1 + x))))
+            rg = ReputationGenerator(
+                dbcontroller, __ALGORITHM_VER__,
+                (0.5, (lambda x: math.log(1.1 + x)))
+            )
             rg.update_author_reputation()
             print("Reputation Generator done\n")
 
             #Run Text Annotation on each revision
             print("Running Text Annotation...")
-            ta = TextAnnotation(dbcontroller, rse, tre, __ALGORITHM_VER__, (0.5, 0.5, 5, chdiff.edit_diff_greedy, chdiff.make_index2))
+            ta = TextAnnotation(
+                dbcontroller, rse, tre, __ALGORITHM_VER__,
+                (0.5, 0.5, 5, chdiff.edit_diff_greedy, chdiff.make_index2)
+            )
             for revision in sorted(revision_list):
                 ta.compute_revision_trust(revision)
             print("Text Annotation done \n")

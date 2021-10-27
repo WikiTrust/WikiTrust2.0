@@ -17,8 +17,8 @@ class StorageEngine(object):
 
     def __init__(self, bucket_name=None, storage_db_ctrl=None, version=0, text_type="revision"):
         """
-        :param db: handle to the pydal database to be used.
-        :param num_objects_per_blob:
+        :param storage_db_ctrl: handle to the databse controller instance.
+        :param num_objects_per_blob: CAUTION CHanging this will break existing storage! (Number of items to compress together in each GCS file)
         :param str database_table: the name of the database table for the storage engine
         :param default_version: Blob version
 
@@ -36,7 +36,8 @@ class StorageEngine(object):
         self.version = version
         self.text_type = text_type
 
-        json_key = "private/gcs_credentials.json"
+        json_key = "./private/wikitrust-prod-643472bb33d3.json"
+        print(os.getcwd())
         self.client = storage.Client.from_service_account_json(json_key)
 
         pass
@@ -59,6 +60,9 @@ class StorageEngine(object):
             # Storage table query
             rev_is_stored = self.storage_db_ctrl.get_storage_blob_name(page_id=page_id,version_id=self.version,rev_id=rev_id,text_type=self.text_type)
             if(rev_is_stored != None):
+                print(
+                    f'{self.text_type} Page {page_id} Rev {rev_id} is already stored in engine,skipping...'
+                )
                 return False # Do not overwrite if a revision text with the givien version_id,page_id,rev_id exists
 
             # Revision table query
@@ -70,8 +74,10 @@ class StorageEngine(object):
                 self.page_dict[page_id] = {}
 
             slot_num = rev_idx//self.num_revs_per_slot
-            blob_name = str(slot_num) + "-" + str(self.version)
+            blob_name = str(self.version
+                           ) + "-" + str(page_id) + "-" + str(slot_num)
             if slot_num not in self.page_dict[page_id]:
+                print("slot num not in page *** ", slot_num)
                 self.page_dict[page_id][slot_num] = {}
 
                 if self.storage_db_ctrl.count_revisions_in_blob(blob_name, self.text_type) > 0:
@@ -80,7 +86,13 @@ class StorageEngine(object):
 
             self.page_dict[page_id][slot_num][str(rev_id)] = text
 
+            print(
+                f'{self.text_type} Page {page_id} Rev {rev_id} is now in storage engine... slot {slot_num} is:'
+            )
+            print(self.page_dict[page_id][slot_num])
+
             if len(self.page_dict[page_id][slot_num]) >= self.num_revs_per_slot:
+                print("writing to storage engine because slot is full")
                 self._write_revisions(page_id, slot_num)
                 return True
             return False
@@ -105,7 +117,7 @@ class StorageEngine(object):
 
         slot_num = rev_idx//self.num_revs_per_slot
 
-        blob_name = str(slot_num) + "-" + str(self.version)
+        blob_name = str(self.version) + "-" + str(page_id) + "-" + str(slot_num)
 
         s = None
         # if do_cache and blob_name in self.cache:
@@ -126,14 +138,17 @@ class StorageEngine(object):
         # Revision table query
         rev_idx = self.storage_db_ctrl.get_rev_idx(rev_id = rev_id, page_id = page_id)
         if rev_idx == None:
+            print(
+                "storage engine read function got page_id, rev_id pair that wasn't found in db "
+            )
             return {}
-        slot_num = rev_idx//self.num_revs_per_slot
+        slot_num = rev_idx // self.num_revs_per_slot
         if(page_id in self.page_dict and slot_num in self.page_dict[page_id] and str(rev_id) in self.page_dict[page_id][slot_num]):
             return self.page_dict[page_id][slot_num][str(rev_id)]
 
         db_data = self.read_all(page_id, rev_id, do_cache)
         if db_data == {}:
-             return ""
+            return ""
         else:
             return db_data[str(rev_id)]
 
@@ -146,20 +161,29 @@ class StorageEngine(object):
                     self._write_revisions(page, slot)
 
 
-    def _write_revisions(self, page, slot_num):
+    def _write_revisions(self, page_id, slot_num):
         """Compresses and stores the revisions in self.revision_dict in gcs"""
-        blob_name = str(slot_num) + "-" + str(self.version)
-        if len(self.page_dict[page][slot_num]) > 0:
-            revisions_json = bytes(json.dumps(self.page_dict[page][slot_num]), 'utf-8')
+        print(self.text_type, "_write_revisions(", page_id, slot_num, ")")
+        blob_name = str(self.version) + "-" + str(page_id) + "-" + str(slot_num)
+        if len(self.page_dict[page_id][slot_num]) > 0:
+            revisions_json = bytes(
+                json.dumps(self.page_dict[page_id][slot_num]), 'utf-8'
+            )
             #s = zlib.compress(revisions_json)
             s = revisions_json
             self._write(self.bucket_name, blob_name, s, type='application/zlib')
             # Empties the memory list.
 
-            for revision in self.page_dict[page][slot_num]:
-                self.storage_db_ctrl.insert_blob_name(rev_id=revision, version_id=self.version, page_id=page, blob_name=blob_name, text_type=self.text_type)
+            for revision in self.page_dict[page_id][slot_num]:
+                self.storage_db_ctrl.insert_blob_name(
+                    rev_id=revision,
+                    version_id=self.version,
+                    page_id=page_id,
+                    blob_name=blob_name,
+                    text_type=self.text_type
+                )
 
-        self.page_dict[page][slot_num] = {}
+        # self.page_dict[page_id][slot_num] = {}
 
     def _write(self, bucketname, filename, content, type='text/plain'):
         """

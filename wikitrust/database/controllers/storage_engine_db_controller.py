@@ -56,20 +56,18 @@ class storage_engine_db_controller:
     """
     @autocommit
     def insert_blob_name(self, rev_id:int, page_id: int, version_id:int, blob_name:str, text_type:str):
-        self.storage_table.insert(rev_id=rev_id, version=version_id, page_id = page_id, blob=blob_name, text_type=text_type)
+        self.storage_table.update_or_insert(
+            rev_id=rev_id,
+            version=version_id,
+            page_id=page_id,
+            blob=blob_name,
+            text_type=text_type
+        )
 
     @autocommit
     def set_rev_idx(self, page_id: int, rev_formated_dict_arry):
-        for i, rev_object in enumerate(rev_formated_dict_arry):
-            # x = self.db.revision.page_id == page_id
-            # y = self.db.revision.rev_id == rev_id
-            # revision_row = self.db(x & y).select().first()
-            # revision_row.index = rep
-            # revision_row.update_record()
-            # rev_formated_dict_arry
-            self.db.revison.insert(
-
-            )
+        print("TODO: Implement set_rev_idx")
+        # I don't think this function was ever used
 
 
     """

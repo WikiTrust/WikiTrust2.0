@@ -10,8 +10,11 @@ from pydal import DAL, Field
 
 from wikitrust.computation_engine.wikitrust_algorithms.text_diff.edit import Edit
 
+
 class TriangleGenerator:
-    def __init__(self, dbcontroller, text_storage_engine, algorithm_ver, params):
+    def __init__(
+        self, dbcontroller, text_storage_engine, algorithm_ver, params
+    ):
         self.dbcontroller = dbcontroller
         self.text_storage_engine = text_storage_engine
         self.algorithm_ver = algorithm_ver
@@ -35,10 +38,15 @@ class TriangleGenerator:
                 reference_revision_id = page_revs[rev_iter]
 
                 #Checks that we have access to the reference text, add advanced error handling later
-                assert self.dbcontroller.check_text_retrieved(reference_revision_id)
+                assert self.dbcontroller.check_text_retrieved(
+                    reference_revision_id
+                )
 
                 #Populates reference_revision_text with current text for use in next iteration
-                reference_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, reference_revision_id))
+                reference_revision_text = json.loads(
+                    self.text_storage_engine.read( page_id, reference_revision_id
+                    )
+                )
 
                 #Skip to next rev_iter
                 continue
@@ -49,35 +57,58 @@ class TriangleGenerator:
             assert self.dbcontroller.check_text_retrieved(judged_revision_id)
 
             #Get revision text for current (judged) revision
-            judged_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, judged_revision_id))
+            judged_revision_text = json.loads(
+                self.text_storage_engine.read(page_id, judged_revision_id
+                )
+            )
 
             #Computes edit distance between reference and current once
-            reference_current_distance = self.compute_edit_distance(reference_revision_text, judged_revision_text)
+            reference_current_distance = self.compute_edit_distance(
+                reference_revision_text, judged_revision_text
+            )
 
-            for new_rev_iter in range(rev_iter + 1, min(rev_iter + self.max_judge_dist, len(page_revs))):
+            for new_rev_iter in range(
+                rev_iter + 1,
+                min(rev_iter + self.max_judge_dist, len(page_revs))
+            ):
                 new_revision_id = page_revs[new_rev_iter]
 
                 #Checks that we have access to the reference text, add advanced error handling later
                 assert self.dbcontroller.check_text_retrieved(new_revision_id)
 
                 #Get revision text for new revision
-                new_revision_text = json.loads(self.text_storage_engine.read(self.algorithm_ver, page_id, new_revision_id))
+                new_revision_text = json.loads(
+                    self.text_storage_engine.read( page_id, new_revision_id
+                    )
+                )
 
+                reference_new_distance = self.compute_edit_distance(
+                    reference_revision_text, new_revision_text
+                )
+                current_new_distance = self.compute_edit_distance(
+                    judged_revision_text, new_revision_text
+                )
 
-                reference_new_distance = self.compute_edit_distance(reference_revision_text, new_revision_text)
-                current_new_distance = self.compute_edit_distance(judged_revision_text, new_revision_text)
+                revision_ids = (
+                    reference_revision_id, judged_revision_id, new_revision_id
+                )
+                distances = (
+                    reference_current_distance, reference_new_distance,
+                    current_new_distance
+                )
 
-                revision_ids = (reference_revision_id, judged_revision_id, new_revision_id)
-                distances = (reference_current_distance, reference_new_distance, current_new_distance)
+                self.dbcontroller.create_triangle(
+                    self.algorithm_ver, page_id, revision_ids, distances
+                )
 
-                self.dbcontroller.create_triangle(self.algorithm_ver, page_id, revision_ids, distances)
-
-            self.dbcontroller.update_revision_log(self.algorithm_ver, "TriangleGenerator", page_id, judged_revision_id)
+            self.dbcontroller.update_revision_log(
+                self.algorithm_ver, "TriangleGenerator", page_id,
+                judged_revision_id
+            )
 
             #Rolls over current revision variables into reference revision variables
             reference_revision_id = judged_revision_id
             reference_revision_text = judged_revision_text
-
 
     def compute_triangles_keepup(self):
         pass
@@ -90,11 +121,18 @@ class TriangleGenerator:
         #Gets list of tuples representings edits
         split_text_1: List[str] = rev_1_text
         split_text_2: List[str] = rev_2_text
-        edit_index: Dict[Tuple[str, str], List[int]] = self.index_function(split_text_2)
-        edit_list_tuples: List[Tuple[int, int, int, int]] = self.text_diff_function(split_text_1, split_text_2, edit_index)
+        edit_index: Dict[Tuple[str, str],
+                         List[int]] = self.index_function(split_text_2)
+        edit_list_tuples: List[Tuple[int, int, int,
+                                     int]] = self.text_diff_function(
+                                         split_text_1, split_text_2, edit_index
+                                     )
 
         #Converts list of tuples to list of Edits
-        edit_list: List[Edit] = [Edit.edit_tuple_constructor(edit_tuple) for edit_tuple in edit_list_tuples]
+        edit_list: List[Edit] = [
+            Edit.edit_tuple_constructor(edit_tuple)
+            for edit_tuple in edit_list_tuples
+        ]
 
         #Calculates insertion_total and deletion_total over all edits in edit_list
         insertion_total: int = 0
@@ -112,13 +150,19 @@ class TriangleGenerator:
         move_total: int = 0
 
         #Creates a list of all move edits in edit_list
-        move_list: List[Edit] = [edit for edit in edit_list if edit.edit_type == Edit.MOVE]
+        move_list: List[Edit] = [
+            edit for edit in edit_list if edit.edit_type == Edit.MOVE
+        ]
 
         #Sorts move_list by the origin of the moves in ascending order
-        moves_origin_list: List[Edit] = sorted(move_list, key=lambda edit: edit.origin)
+        moves_origin_list: List[Edit] = sorted(
+            move_list, key=lambda edit: edit.origin
+        )
 
         #Sorts move_list by the destination of the moves in descending order
-        moves_destination_list: List[Edit] = sorted(move_list, key=lambda edit: edit.destination)[::-1]
+        moves_destination_list: List[Edit] = sorted(
+            move_list, key=lambda edit: edit.destination
+        )[::-1]
 
         #Now we compute two groups of pairs of moves. Assume a pair consists of (Move a, Move b).
         #These groups are origin valid pairs and destination valid pairs respectively.
@@ -129,14 +173,14 @@ class TriangleGenerator:
         origin_valid_move_list: List[Tuple[Edit, Edit]] = []
 
         for move_a_iter, move_a in enumerate(moves_origin_list):
-            for move_b in moves_origin_list[(move_a_iter+1):]:
+            for move_b in moves_origin_list[(move_a_iter + 1):]:
                 origin_valid_move_list.append((move_a, move_b))
 
         #Creates a list of all destination valid pairs in move_list.
         destination_valid_move_list: List[Tuple[Edit, Edit]] = []
 
         for move_a_iter, move_a in enumerate(moves_destination_list):
-            for move_b in moves_destination_list[(move_a_iter+1):]:
+            for move_b in moves_destination_list[(move_a_iter + 1):]:
                 destination_valid_move_list.append((move_a, move_b))
 
         #Creates a list of all crossed move pairs. These are move pairs that are both
