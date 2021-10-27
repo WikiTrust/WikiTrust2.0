@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     # find a page:
     current_PyWiki_Page = wikiSearchEngine.search(
-        "Martin Jančula", max_pages_grabbed=1, search_by="nearmatch"
+        "Walter Goad", max_pages_grabbed=1, search_by="nearmatch"
     )[0]
     #  #wikiSearchEngine.getByPageID()
     current_page_id = current_PyWiki_Page.pageid
@@ -160,21 +160,14 @@ if __name__ == '__main__':
 
             print("Text Annotation done \n")
 
+            print("flushing storage engines....")
+            textTrustStore.flush()
+            revStore.flush()
+
     storage_db_ctrl.print_storage_table()
 
     revision_list = frontend_db_ctrl.get_all_revisions(current_page_id)
     print("Revision Engine and Text Reputation Engine Populated")
-
-    # db_test.drop_and_populate(compute_db_ctrl)
-    # ce_test.test_computation_engine(
-    #     compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl
-    # )
-
-    # storage_fill.fill_storage_engine(storage_db_ctrl)
-    # storage_test.test_storage_engine(storage_db_ctrl)
-
-    # print(db)
-    # print(db.text_storage)
 
     print("Page Id: ", current_page_id, "rev", revision_list[0])
 

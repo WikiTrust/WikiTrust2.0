@@ -15,11 +15,11 @@ import { fetchScores } from './serverAPI';
 /* index.ts
 This script is the entry point for everything, it calls each of the steps (found in the imports above) to inject the UI and process the page.
 Once bundled into a single JS script, this will be injected into all pages on the wikipedia domain by the browser extension or injected by the bookmarklet.
-This doesn't depend on any libraries or files outside of the bundle & core folder, so it should function on its own (outside of an extension).
+This doesn't depend on any libraries or files outside of this folder & the assets found in the core folder (where the built js file ends up), so it should function on its own (inside or outside of an extension).
 
 Note: All of this will get put into an annonoumous function by Parcel which means our
 variables (except those explicitly defined on window) don't go in the Wikipedia page's js scope - so they dont
-interfere with Wikipedia's own javascript.
+interfere with Wikipedia's own javascript, browsers also isolate extensions from page js so we have to do hacks to get to wikipedia-page own javascript.
 */
 
 /** @returns The max number in an array of numbers */
@@ -57,6 +57,8 @@ const generateFakeScores = (word_list: string[]) => {
   });
 };
 
+/* gets the revisionId and pageId that the wikipedia page javascript defines globally
+NOTE: this must be run using the page's scope Not an extensions! */
 const getWikipediaPageMetaData = () => {
   let revId = window.RLCONF.wgCurRevisionId;
   if (!revId) revId = window.RLCONF.wgRevisionId;
@@ -65,7 +67,6 @@ const getWikipediaPageMetaData = () => {
     revId: revId,
     pageId: window.RLCONF.wgArticleId,
   };
-  console.log(output);
   return output;
 };
 
@@ -113,22 +114,25 @@ const setupWikiTrust = () => {
   console.log('splitData: ', splitData);
   // fetchScores() // comment out generateFakeScores and uncoment this to use the real python algorithms
   // const {revId,pageId} =
-  runFunctionInPageContext(getWikipediaPageMetaData); //();
-  // fetchScores(revId,pageId).then((serverResponse) => {
-  //     if (serverResponse.error) {
-  //       alert("(WILL SHOW FAKE SCORES) server error:" + JSON.stringify(serverResponse));
-  //       generateFakeScores(splitData.pageWordList).then((serverResponse) => {
-  //         processScores(serverResponse, splitData);
-  //       });
-  //     } else processScores(serverResponse, splitData);
-  //   }).catch(console.warn);
-  // completionStage = consts.COMPLETION_STAGES.api_sent;
+  console.log("fetching vars")
+  runFunctionInPageContext(getWikipediaPageMetaData).then((pageMetaData:any)=>{
+    fetchScores(pageMetaData.revId,pageMetaData.pageId).then((serverResponse) => {
+      if (serverResponse.error) {
+        alert("(WILL SHOW FAKE SCORES) server error:" + JSON.stringify(serverResponse));
+        generateFakeScores(splitData.pageWordList).then((serverResponse) => {
+          processScores(serverResponse, splitData);
+        });
+      } else processScores(serverResponse, splitData);
+    }).catch(console.warn);
+  completionStage = consts.COMPLETION_STAGES.api_sent;
+  }); //();
+
 };
 
 const handleActivateButtonClick = () => {
   if (completionStage === consts.COMPLETION_STAGES.base_ui_injected) {
     setupWikiTrust();
-  } else alert('TODO: Write Cancel Loading WikiTrust function');
+  } else alert('TODO: Write Cancel Loading WikiTrust data function');
 };
 
 // ------ Initilization Code (Runs on script injection) -------

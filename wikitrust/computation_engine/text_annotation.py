@@ -101,4 +101,4 @@ class TextAnnotation:
             page_id, rev_id, new_json, datetime.now()
         )
 
-        self.trust_storage_engine.flush()
+        # self.trust_storage_engine.flush() # this is commented out because we will flush after all computations are done, this does make for a risk of minor lost data durring crash, but it's way more effecient

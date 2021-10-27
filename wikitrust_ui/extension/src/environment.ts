@@ -45,11 +45,41 @@ export const getAsset = (relativePath: string) => {
   } else return extensionSpecificAPIs.getURL(relativePath);
 };
 
+let runFunctionInPageContext_lock: boolean = false;
+/* returns a promise that resolves with the return value of the function
+// Idea from: https://stackoverflow.com/questions/3955803/chrome-extension-get-page-variables-in-content-script
+*/
 export const runFunctionInPageContext = (fn: Function) => {
-  if (envIsBookmarklet()) fn();
-  else if (ENVIRONMENT === consts.ENVIRONMENTS.chrome_extension) {
-    const script = document.createElement('script');
-    script.text = `(${fn.toString()})();`;
-    document.documentElement.appendChild(script);
-  }
+  return new Promise((resolve, reject) => {
+    if (envIsBookmarklet()) resolve(fn());
+    else if (ENVIRONMENT === consts.ENVIRONMENTS.chrome_extension) {
+      if (runFunctionInPageContext_lock == true) {
+        alert(
+          'Uh Oh runFunctionInPageContext() called again before the last execution of it could finish!'
+        );
+        reject();
+      }
+
+      runFunctionInPageContext_lock = true;
+
+      window.addEventListener(
+        'message',
+        ({ data }) => {
+          // We only accept messages from ourselves
+          let result = data.wikiTrustPageContextRun;
+          if (data.wikiTrustPageContextRun) resolve(result);
+        },
+        false
+      );
+
+      // Inject script into page scope
+      const script = document.createElement('script');
+      script.text = `window.postMessage({wikiTrustPageContextRun:(${fn.toString()})()}, '*');`;
+      document.documentElement.appendChild(script);
+
+      // restore lock so this function can be called again
+      runFunctionInPageContext_lock = false;
+    }
+  });
 };
+
