@@ -21,7 +21,7 @@ class SearchEngine:
         :param keyterm: A string that we want to search for on the site in order to receive relevant pages
         :param max_pages_grabbed (optional): The maximum number of pages to be returned
         :param search_by (optional): Pages can either searched by "title", "text", or "nearmatch". The "title" search is best for finding pages with a similar title
-        :return: A list of pywikibot.Page objects corresponding to the found pages
+        :return: A list of pywikibot.page objects corresponding to the found pages
         """
         pageList = []
         #Namespaces[0] searches all Wikipedia pages (there are other namespaces such as PageFiles that we do not want to search)
@@ -35,7 +35,7 @@ class SearchEngine:
         """
         Searches a site for a page based on the page_id
         :param page_id: An integer corresponding to the page_id of the provided page
-        :return: A pywikibot.Page object corresponding to provided page_id
+        :return: A pywikibot.page object corresponding to provided page_id
         """
         #page_generator = self.source.load_pages_from_pageids(page_ids)
         #print(list(page_generator))
@@ -47,7 +47,7 @@ class SearchEngine:
         """
         Creates list of pages from one category on a site
         :param category: A string corresponding to a page category
-        :return: A list of pywikibot.Page objects corresponding to the given category
+        :return: A list of pywikibot.page objects corresponding to the given category
         """
         categoryPage = pywikibot.Category(self.source, title=category)
         return categoryPage.articles()
@@ -57,7 +57,7 @@ class SearchEngine:
         """
         Creates list of pages from multiple categories
         :param categories: List of page categories on a site
-        :return: A list of lists that each contain pywikibot.Page objects corresponding to each category
+        :return: A list of lists that each contain pywikibot.page objects corresponding to each category
         """
         pageList = []
         for category in categories:

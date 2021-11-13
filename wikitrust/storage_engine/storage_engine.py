@@ -37,7 +37,6 @@ class StorageEngine(object):
         self.text_type = text_type
 
         json_key = "./private/wikitrust-prod-643472bb33d3.json"
-        print(os.getcwd())
         self.client = storage.Client.from_service_account_json(json_key)
 
         pass
@@ -227,7 +226,7 @@ class StorageEngine(object):
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self):
         """
         Used for performing flash storage on "with" statement exit
         """

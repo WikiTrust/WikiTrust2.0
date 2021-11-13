@@ -1,14 +1,8 @@
 from wikitrust.test.db_test import drop_and_populate
-from wikitrust.test.fill_storage_engine import fill_storage_engine
+# from wikitrust.test.fill_storage_engine import fill_storage_engine
 
-from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
-from wikitrust.storage_engine.storage_engine import StorageEngine
 from wikitrust.storage_engine.storage_engine import RevisionStorageEngine
 from wikitrust.storage_engine.storage_engine import TextTrustStorageEngine
-from wikitrust.database.controllers.frontend_db_controller import frontend_db_controller
-
-import wikitrust.storage_engine.local_storage_engine as local_storage_engine
-import wikitrust.storage_engine.storage_engine as storage_engine
 
 from wikitrust.computation_engine.triangle_generator import TriangleGenerator
 from wikitrust.computation_engine.reputation_generator import ReputationGenerator
@@ -22,7 +16,6 @@ import math
 
 __PAGEID__ = 31774937
 __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
-__ALGORITHM_VER__ = "0.1"
 
 
 def test_computation_engine(compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl):

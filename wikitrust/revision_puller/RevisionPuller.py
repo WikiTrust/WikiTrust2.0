@@ -10,7 +10,7 @@ def get_all_revisions(page:pywikibot.page.Page, recent_to_oldest:bool=True,):
     """
     Returns the last (num_revisions) revisions from a given Wikipedia page
     If all revisions are desired use: get_latest_revisions(page)
-    :param page: A pywikibot.Page object that we want to grab the the revisions for
+    :param page: A pywikibot.page object that we want to grab the the revisions for
     :param recent_to_oldest: Set to false if we want the revisions in order of oldest to most recent
     :return: A list of pywikibot.page.Revision objects (dictionaries that store revisions by revid, text changed, timestamp, user, and comment)
              Note that revisions starting earlier will be towards the end of the list
@@ -23,7 +23,7 @@ def get_latest_revisions(page:pywikibot.page.Page, recent_to_oldest:bool=True, n
     """
     Returns the last (num_revisions) revisions from a given Wikipedia page
     If all revisions are desired use: get_latest_revisions(page)
-    :param page: A pywikibot.Page object that we want to grab the the revisions for
+    :param page: A pywikibot.page object that we want to grab the the revisions for
     :param recent_to_oldest: Set to false if we want the revisions in order of oldest to most recent
     :param num_revisions: The number of revisions to be grabbed (set to an integer to set limit to number of revisions grabbed)
     :param start_time: A timestamp corresponding to the oldest revision we want to grab
@@ -36,7 +36,7 @@ def get_latest_revisions(page:pywikibot.page.Page, recent_to_oldest:bool=True, n
 def get_revisions_between(page:pywikibot.page.Page, revision1:pywikibot.page.Revision, revision2:pywikibot.page.Revision, recent_to_oldest=True):
     """
     Returns all of the revisions between two revisions from a given Wikipedia page
-    :param page: A pywikibot.Page object that we want to grab the the revisions for
+    :param page: A pywikibot.page object that we want to grab the the revisions for
     :param recent_to_oldest: Set to false if we want the revisions in order of oldest to most recent
     :param revision1: The first revision of the page
     :param revision2: The second revision of the page
@@ -55,7 +55,7 @@ def get_revisions_between(page:pywikibot.page.Page, revision1:pywikibot.page.Rev
 def get_text_of_old_revision(page:pywikibot.page.Page, rev_id:int):
     """
     Returns the WikiText of a page from a specific revision
-    :param page: A pywikibot.Page object that we want to return the text for
+    :param page: A pywikibot.page object that we want to return the text for
     :param rev_id: The revision id corresponding to the revision of the page that we want to extract the text based on
     :return: A string of WikiText containing the text of a page after the revision
     """

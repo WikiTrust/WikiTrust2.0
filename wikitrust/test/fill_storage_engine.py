@@ -11,7 +11,7 @@ import json
 import random
 __PAGEID__ = 31774937
 __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
-__ALGORITHM_VER__ = "0.1"
+
 
 def fill_storage_engine(storage_db_ctrl):
 
@@ -36,4 +36,4 @@ def fill_storage_engine(storage_db_ctrl):
     #     rev_id = json_object["revisions"][rev_iter]["revisionId"]
     #     print("reading: "+str(rev_id))
     #     print(tte.read(page_id=page_id, rev_id=rev_id))
-        # ^ON Second thought How is this working at all? tte is out of scope.
+    # ^ON Second thought How is this working at all? tte is out of scope.

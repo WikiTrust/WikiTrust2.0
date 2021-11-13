@@ -1,11 +1,9 @@
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
 from logging import warning, error
-import traceback
-import json, os
+import traceback, json, threading
 
 import wikitrust.database.controllers.frontend_db_controller as database_controller
-import wikitrust.storage_engine.local_storage_engine as local_storage_engine
 from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
 from wikitrust.storage_engine.storage_engine import TextTrustStorageEngine
 from wikitrust.storage_engine.storage_engine import RevisionStorageEngine
@@ -78,20 +76,13 @@ def MakeHandlerClassWithParameters(
 
 
 class text_trust_visualization_server:
-    def __init__(self, storage_db_controller, frontend_db_ctrl) -> None:
+    def __init__(self, frontend_db_ctrl, revStore, textTrustStore) -> None:
         self.current_revision_id = None
         self.frontend_db_ctrl = frontend_db_ctrl
-        self.text_trust_engine = TextTrustStorageEngine(
-            bucket_name='wikitrust-testing',
-            storage_db_ctrl=storage_db_controller,
-            version=1
-        )
-        self.rev_text_engine = RevisionStorageEngine(
-            bucket_name='wikitrust-testing',
-            storage_db_ctrl=storage_db_controller,
-            version=1
-        )
-        pass
+
+        # get references to the storage engines
+        self.revStore = revStore
+        self.textTrustStore = textTrustStore
 
     def get_latest_text_trust(self, pageId) -> str:
         return json.dumps(
@@ -100,12 +91,10 @@ class text_trust_visualization_server:
 
     def get_revision_text_trust(self, revisionId) -> str:
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
-        text_trust = self.text_trust_engine.read(
+        text_trust = self.textTrustStore.read(
             page_id=page_id, rev_id=revisionId
         )
-        text_words = self.rev_text_engine.read(
-            page_id=page_id, rev_id=revisionId
-        )
+        text_words = self.revStore.read(page_id=page_id, rev_id=revisionId)
         return json.dumps(
             {
                 "words": json.loads(text_words),
@@ -168,7 +157,7 @@ class text_trust_visualization_server:
         server_address = ('', port)
 
         requestHandler = MakeHandlerClassWithParameters(
-            staticWebContentDirectory='./wikitrust/test/text_trust_vizualizer',
+            staticWebContentDirectory='./wikitrust/text_trust_vizualizer',
             apiHandlerClass=self
         )
 
@@ -178,6 +167,14 @@ class text_trust_visualization_server:
         print(
             'Running server - open your browser to: http://localhost:' +
             str(port) +
-            ' or (assuming the port is 8000) run the extension/bookmarklet on a wikipedia page'
+            ' or run the extension/bookmarklet on a wikipedia page (this assumes the port is 8000) '
         )
-        httpd.serve_forever()
+
+        # Start the server in a new thread
+        server_thread = threading.Thread(
+            name='wikitrust_web_server_thread', target=httpd.serve_forever
+        )  # can also pass args with args=() param
+        server_thread.setDaemon(
+            True
+        )  # Set as a daemon so it will be killed once the main thread is dead.
+        server_thread.start()

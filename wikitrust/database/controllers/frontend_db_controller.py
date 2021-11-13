@@ -1,13 +1,14 @@
 from pydal import DAL, Field
 from pydal.migrator import InDBMigrator
 from datetime import date
-from wikitrust.database.controllers.create_entry import create_entry  as create
+from wikitrust.database.controllers.create_entry import create_entry as create
 import wikitrust.database.db_schema as db_schema
 from wikitrust.database.controllers.db_wrappers import autocommit
 import logging
 
+
 class frontend_db_controller:
-    def __init__(self,  db):
+    def __init__(self, db):
         self.db = db
 
     #parameters: rev_id
@@ -23,29 +24,36 @@ class frontend_db_controller:
         print(rev)
         return rev.next_rev
 
-
     #parameters: page_id
-    #return all revision ids
-    def get_all_revisions(self, page_id):
+    #return the revision id of the most recent revision of the page
+    def get_most_recent_rev_id(self, page_id):
         x = self.db.revision.page_id == page_id
-        all_revs = list(self.db(x).iterselect(orderby=self.db.revision.rev_id))
-        all_revs_list = []
-        for row in all_revs:
-            all_revs_list.append(row.rev_id)
-        return all_revs_list
+        return self.db(x).select(self.db.revision.rev_id).last().rev_id
+
+    # returns an iterator for going through all pages currently in the database
+    def get_all_pages(self):
+        return self.db(self.db.page).iterselect(self.db.page.ALL)
+
+    def get_environment(self, environment_id):
+        return self.db(environment_id).select(
+            self.db.environment.environment_name
+        ).first().environment_name
 
     #parameters: revision_id
-    #return boolean corresponding to text_retrieved
+    #return boolean corresponding to if the text was retirieved (column text_retrieved)
+    # Note: The revision puller sets text_retrieved before the text is downloaded, this is incorrect behavior!!
     def check_text_retrieved(self, rev_id):
         x = self.db.revision.rev_id == rev_id
-        ret = self.db(x).select(self.db.revision.text_retrieved).first().text_retrieved
+        ret = self.db(x).select(self.db.revision.text_retrieved
+                               ).first().text_retrieved
         return ret
 
     #parameters: page_id
     #return: environment
     def get_environment_by_page_id(self, page_id):
         x = self.db.page.page_id == page_id
-        return self.db(x).select(self.db.page.environment_id).first().environment_id
+        return self.db(x).select(self.db.page.environment_id
+                                ).first().environment_id
 
     #parameters: rev_id
     #return: page_id
@@ -66,10 +74,14 @@ class frontend_db_controller:
         x = self.db.user_reputation.version == version
         y = self.db.user_reputation.user_id == user_id
         z = self.db.user_reputation.environment == env
-        user_rep = self.db(x & y & z).select(self.db.user_reputation.reputation_value)
-        if(len(user_rep) > 1):
-            logging.error("MORE THAN ONE USER FOUND WHEN USING get_reputation")
-        if(user_rep.first()==None):
+        user_rep = self.db(x & y & z).select(
+            self.db.user_reputation.reputation_value
+        )
+        if (len(user_rep) > 1):
+            logging.error(
+                "MORE THAN ONE USER FOUND WHEN USING get_reputation in frontend_db_controller"
+            )
+        if (user_rep.first() == None):
             self.create.create_user_reputation(version, user_id, env)
             return 0
         user_rep = user_rep.first().reputation_value

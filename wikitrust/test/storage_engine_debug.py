@@ -10,7 +10,6 @@ from pydal import DAL, Field
 import random
 __PAGEID__ = 31774937
 __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
-__ALGORITHM_VER__ = "0.1"
 
 def test_storage_engine(storage_db_ctrl):
 

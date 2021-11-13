@@ -1,7 +1,7 @@
 from pydal import DAL, Field
 from pydal.migrator import InDBMigrator
 from datetime import date
-from wikitrust.database.controllers.create_entry import create_entry  as create
+from wikitrust.database.controllers.create_entry import create_entry
 import wikitrust.database.db_schema as db_schema
 from wikitrust.database.controllers.db_wrappers import autocommit
 import logging
@@ -10,7 +10,7 @@ import logging
 class computation_engine_db_controller:
     def __init__(self,  db):
         self.db = db
-        self.create = create(self.db)
+        self.create_entry = create_entry(self.db)
 
     def populate_prev_rev(self, page_id):
         all_revs = self.db(self.db.revision.page_id == page_id).iterselect(orderby=self.db.revision.rev_id)
@@ -45,7 +45,7 @@ class computation_engine_db_controller:
         if(len(user_rep) > 1):
             logging.error("MORE THAN ONE USER FOUND WHEN USING get_reputation")
         if(user_rep.first()==None):
-            self.create.create_user_reputation(version, user_id, env)
+            self.create_page_entry.create_user_reputation(version, user_id, env)
             return 0
         user_rep = user_rep.first().reputation_value
         return user_rep
@@ -72,18 +72,26 @@ class computation_engine_db_controller:
         z = self.db.triangles.rev_id_3 == revs[2]
         ret = triangle = self.db(v & w & x & y & z).select().first()
         if(triangle == None):
-            ret = self.create.create_triangles(version, page_id, revs[0], revs[1], revs[2], rep).id
+            ret = self.create_page_entry.create_triangles(
+                version, page_id, revs[0], revs[1], revs[2], rep
+            ).id
         else:
             ret = ret.id
             triangle.reputation_inc = rep
             triangle.update_record()
             self.db.commit()
         #rev 1 to rev 2 distance
-        self.create.create_text_distance(version, revs[0], revs[1], distances[0])
+        self.create_page_entry.create_text_distance(
+            version, revs[0], revs[1], distances[0]
+        )
         #rev 2 to rev 3 distance
-        self.create.create_text_distance(version, revs[1], revs[2], distances[1])
+        self.create_page_entry.create_text_distance(
+            version, revs[1], revs[2], distances[1]
+        )
         #rev 1 to rev 3 distance
-        self.create.create_text_distance(version, revs[0], revs[2], distances[2])
+        self.create_page_entry.create_text_distance(
+            version, revs[0], revs[2], distances[2]
+        )
         return ret
 
     #parameters: triangle.id, reputation
@@ -130,7 +138,9 @@ class computation_engine_db_controller:
         y = self.db.revision_log.page_id == page_id
         rev_log = self.db(x & y).select().first()
         if(rev_log == None):
-            rev_log = self.create.create_revision_log(version, stage, page_id, rev, date.today())
+            rev_log = self.create_page_entry.create_revision_log(
+                version, stage, page_id, rev, date.today()
+            )
         else:
             rev_log.stage = stage
             rev_log.last_rev = rev
@@ -156,6 +166,12 @@ class computation_engine_db_controller:
     #return: environment
     def get_environment_by_page_id(self, page_id):
         x = self.db.page.page_id == page_id
+        return self.db(x).select(self.db.page.environment_id).first().environment_id
+
+    #parameters: eviroment_name
+    #return: environment
+    def get_environment_by_name(self, eviroment_name):
+        x = self.db.environments.page_id == page_id
         return self.db(x).select(self.db.page.environment_id).first().environment_id
 
     #parameters: triangle.id
