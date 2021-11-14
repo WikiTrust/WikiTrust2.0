@@ -1,8 +1,8 @@
-__ALGORITHM_VER__ = 1
-__DBURI__ = "sqlite://storage.sqlite"
-__STORAGE_BUCKET_NAME__ = "wikitrust-testing"
-
 from datetime import datetime
+import sys
+
+# constants used in the program
+import wikitrust.consts as consts
 
 # for database
 from wikitrust.database import db_schema
@@ -25,20 +25,20 @@ from wikitrust.main_frontend_controller import main_frontend_controller
 if __name__ == '__main__':
 
     # Connect to database:
-    db = db_schema.connect_to_db(__DBURI__)
+    db = db_schema.connect_to_db(consts.__DBURI__)
 
     #initialize storage engines
     storage_db_ctrl = storage_engine_db_controller(db)
     # storage_db_ctrl.print_storage_table() # < for debugging
     revStore = RevisionStorageEngine(
-        bucket_name=__STORAGE_BUCKET_NAME__,
+        bucket_name=consts.__STORAGE_BUCKET_NAME__,
         storage_db_ctrl=storage_db_ctrl,
-        version=__ALGORITHM_VER__
+        version=consts.__ALGORITHM_VER__
     )
     textTrustStore = TextTrustStorageEngine(
-        bucket_name=__STORAGE_BUCKET_NAME__,
+        bucket_name=consts.__STORAGE_BUCKET_NAME__,
         storage_db_ctrl=storage_db_ctrl,
-        version=__ALGORITHM_VER__
+        version=consts.__ALGORITHM_VER__
     )
 
     # initialize backend:
@@ -46,5 +46,28 @@ if __name__ == '__main__':
         with main_frontend_controller(db, backend_ctrl) as frontend_ctrl:
             frontend_ctrl.print_processed_pages()
             frontend_ctrl.start_viz_server()
-            while True:
-                pass
+            # NOTE: you'll need some kind of infinite loop after starting the viz server, as it runs in a seperate thread
+            # that will get killed if this thread exits (like if the program finishes the last line).
+
+            environment = backend_ctrl.get_or_create_wiki_environment(
+                consts.__WIKI_ENVIRONMENT_NAME__
+            )
+
+            commandLineMessage = "Enter the name/search keyword of a wikipedia page to process it. Or type STOP to quit"
+            print(commandLineMessage)
+            for search_term in sys.stdin:
+
+                search_term = search_term.rstrip()
+                if search_term == 'STOP':
+                    break
+
+                page = backend_ctrl.find_page(search_term)
+                if page is None:
+                    print("No wikipedia page found for that search.")
+                else:
+                    print("Processing page: " + page.title())
+                    backend_ctrl.process_page(page, environment)
+                    print("Done processing page: " + page.title())
+                print(commandLineMessage)
+
+    print("Program has exited. Server thread should have stopped too.")

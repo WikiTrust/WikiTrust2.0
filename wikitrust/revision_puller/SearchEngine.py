@@ -35,12 +35,13 @@ class SearchEngine:
         """
         Searches a site for a page based on the page_id
         :param page_id: An integer corresponding to the page_id of the provided page
-        :return: A pywikibot.page object corresponding to provided page_id
+        :return: A pywikibot.page object corresponding to provided page_id or None if no page is found
         """
-        #page_generator = self.source.load_pages_from_pageids(page_ids)
-        #print(list(page_generator))
-        return self.source.load_pages_from_pageids([page_id])[0]
-        raise NotImplementedError
+        result = self.source.load_pages_from_pageids([page_id])
+        if len(result) > 0:
+            return result[0]
+        else:
+            return None
 
 
     def getByCategory(self, category:str):

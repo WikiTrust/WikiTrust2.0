@@ -30,6 +30,12 @@ class frontend_db_controller:
         x = self.db.revision.page_id == page_id
         return self.db(x).select(self.db.revision.rev_id).last().rev_id
 
+    #parameters: page_id
+    #return the revision index of the most recent revision of the page
+    def get_most_recent_rev_index(self, page_id):
+        x = self.db.revision.page_id == page_id
+        return self.db(x).select(self.db.revision.rev_idx).last().rev_idx
+
     # returns an iterator for going through all pages currently in the database
     def get_all_pages(self):
         return self.db(self.db.page).iterselect(self.db.page.ALL)

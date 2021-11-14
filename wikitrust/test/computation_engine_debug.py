@@ -1,3 +1,9 @@
+import datetime
+from datetime import datetime
+
+# constants used in the program
+import wikitrust.consts as consts
+
 from wikitrust.test.db_test import drop_and_populate
 # from wikitrust.test.fill_storage_engine import fill_storage_engine
 
@@ -8,8 +14,14 @@ from wikitrust.computation_engine.triangle_generator import TriangleGenerator
 from wikitrust.computation_engine.reputation_generator import ReputationGenerator
 from wikitrust.computation_engine.text_annotation import TextAnnotation
 import wikitrust.computation_engine.wikitrust_algorithms.text_diff.chdiff as chdiff
-import datetime
-from datetime import datetime
+
+
+#
+#
+#
+# NOTE: This is an older test that is not used anymore but runs on the real storage engine / db
+#
+
 
 import json
 import math
@@ -19,6 +31,7 @@ __PAGEJSON__ = "resources/LadyGagaMeatDressRevisions/all_revision.json"
 
 
 def test_computation_engine(compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl):
+
     # Initialize DB controller
     print("Populating DBController Database")
 
@@ -68,7 +81,7 @@ def test_computation_engine(compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl):
             #Run Triangle generator
             print("Starting Triangle Generator...")
             tg = TriangleGenerator(
-                dbcontroller, rse, __ALGORITHM_VER__,
+                dbcontroller, rse, consts.__ALGORITHM_VER__,
                 (3, chdiff.edit_diff_greedy, chdiff.make_index2)
             )
             tg.compute_triangles_batch(__PAGEID__)
@@ -77,7 +90,7 @@ def test_computation_engine(compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl):
             #Run Reputation generator
             print("Starting Reputation Generator...")
             rg = ReputationGenerator(
-                dbcontroller, __ALGORITHM_VER__,
+                dbcontroller, consts.__ALGORITHM_VER__,
                 (0.5, (lambda x: math.log(1.1 + x)))
             )
             rg.update_author_reputation()
@@ -86,7 +99,7 @@ def test_computation_engine(compute_db_ctrl, storage_db_ctrl, frontend_db_ctrl):
             #Run Text Annotation on each revision
             print("Running Text Annotation...")
             ta = TextAnnotation(
-                dbcontroller, rse, tre, __ALGORITHM_VER__,
+                dbcontroller, rse, tre, consts.__ALGORITHM_VER__,
                 (0.5, 0.5, 5, chdiff.edit_diff_greedy, chdiff.make_index2)
             )
             for revision in sorted(revision_list):

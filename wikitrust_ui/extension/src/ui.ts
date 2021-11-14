@@ -3,6 +3,7 @@ import { getColorForPercentage } from './applyScores';
 import { showTooltipAtElement, hideTooltip } from './tooltip';
 
 let activateWTButton: HTMLElement;
+let WTDialPointer: HTMLElement;
 
 /**
  * Injects a style link tag into the head of the wikipedia page pointing to '/core/WikiTrustStyle.css'
@@ -18,9 +19,28 @@ export const injectStylesheet = () => {
 };
 
 /**
- * Returns an activate wikitrust button element.
+ * Returns the gradient dial that goes behind the activate wikitrust button.
  */
-const buildButton = () => {
+const buildCircularGradient = () => {
+  const gradient = document.createElement('img');
+  gradient.id = 'WT_Gradient_Dial';
+  gradient.src = getAsset('core/Gradient.png');
+  return gradient;
+};
+
+/**
+ * Returns the black pointer line element for the gradient dial visualization.
+ */
+const buildDialPointer = () => {
+  WTDialPointer = document.createElement('div');
+  WTDialPointer.id = 'WT_Gradient_Dial_Pointer';
+  return WTDialPointer;
+};
+
+/**
+ * Returns the activate wikitrust button element.
+ */
+ const buildWTButton = () => {
   activateWTButton = document.createElement('button');
   activateWTButton.id = 'WT_Activate_Button';
   activateWTButton.innerHTML = 'W<sub>T</sub>';
@@ -46,6 +66,18 @@ const buildMarkContainer = () => {
   return markContainer;
 };
 
+/* shows the gradient dial, sets the position dial pointer to the correct position on the gradient dial and sets the color scheme to match. */
+const showTrustScore = (score:number) => {
+  window.WikiTrustGlobalVars.uiFrameContainer!.classList.add('showing-score');
+  activateWTButton.innerText = score.toFixed(1);
+  activateWTButton.style.borderColor = getColorForPercentage((1-score),1);
+  WTDialPointer.style.transform = `rotate(${(1-score) * 90}deg)`;
+}
+const hideTrustScore = () => {
+  window.WikiTrustGlobalVars.uiFrameContainer!.classList.remove('showing-score');
+  activateWTButton.innerHTML = 'W<sub>T</sub>';
+}
+
 /**
  * Adds a marker/dot element on the left side of the article which corresponds to a particular grouping.
  * @param groupingElement - The element that this marker is refering to (usually this is a paragraph or section element which contains many words and or child elements)
@@ -69,14 +101,16 @@ export const addTextGroupMark = (
   markElement.style.backgroundColor = getColorForPercentage(score, 1);
   markElement.onmouseenter = (e) => {
     groupingElement.classList.remove('trust-hidden');
-    showTooltipAtElement(
-      markElement,
-      'Max Score: ' + Math.round(score * 1000) / 1000
-    );
+    // showTooltipAtElement(
+    //   markElement,
+    //   'Max Score: ' + Math.round(score * 1000) / 1000
+    // );
+    showTrustScore(score * 100);
   };
   markElement.onmouseleave = (e) => {
     groupingElement.classList.add('trust-hidden');
-    hideTooltip();
+    // hideTooltip();
+    hideTrustScore();
   };
   markContainer.appendChild(markElement);
 };
@@ -105,8 +139,11 @@ export const injectUi = () => {
   const uiFrameContainer = (window.WikiTrustGlobalVars.uiFrameContainer = document.createElement(
     'div'
   ));
-  uiFrameContainer.id = 'Wikitrust_UI';
-  uiFrameContainer.appendChild(buildButton());
+  uiFrameContainer.id = 'Wikitrust_UI_Container';
+  // uiFrameContainer.appendChild(buildWikiTrustButtonComponent());
+  uiFrameContainer.appendChild(buildWTButton());
+  uiFrameContainer.appendChild(buildCircularGradient());
+  uiFrameContainer.appendChild(buildDialPointer());
   document.body.appendChild(buildMarkContainer());
   document.body.appendChild(uiFrameContainer);
 };
@@ -126,11 +163,4 @@ export const removeUi = () => {
 //   uiFrame.src = getAsset('core/UIFrame.html');
 //   uiFrameContainer.appendChild(uiFrame);
 //   document.body.appendChild(uiFrameContainer);
-// };
-
-// const buildCircleGradient = () => {
-//   const gradient = document.createElement('img');
-//   gradient.id = 'WikiTrustCircleGradient';
-//   gradient.src = getAsset('core/Gradient_180.jpg');
-//   return gradient;
 // };

@@ -45,7 +45,7 @@ class computation_engine_db_controller:
         if(len(user_rep) > 1):
             logging.error("MORE THAN ONE USER FOUND WHEN USING get_reputation")
         if(user_rep.first()==None):
-            self.create_page_entry.create_user_reputation(version, user_id, env)
+            self.create_entry.create_user_reputation(version, user_id, env)
             return 0
         user_rep = user_rep.first().reputation_value
         return user_rep
@@ -64,15 +64,15 @@ class computation_engine_db_controller:
 
     #return unique id
     #update text Distances 1 - 2, 2 - 3, 1 - 3
-    def create_triangle(self, version, page_id, revs, distances, rep = None):
+    def create_triangle(self, version, page_id, revs, distances, rep=None):
         v = self.db.triangles.version == version
         w = self.db.triangles.page_id == page_id
         x = self.db.triangles.rev_id_1 == revs[0]
         y = self.db.triangles.rev_id_2 == revs[1]
         z = self.db.triangles.rev_id_3 == revs[2]
         ret = triangle = self.db(v & w & x & y & z).select().first()
-        if(triangle == None):
-            ret = self.create_page_entry.create_triangles(
+        if (triangle == None):
+            ret = self.create_entry.create_triangles(
                 version, page_id, revs[0], revs[1], revs[2], rep
             ).id
         else:
@@ -81,15 +81,15 @@ class computation_engine_db_controller:
             triangle.update_record()
             self.db.commit()
         #rev 1 to rev 2 distance
-        self.create_page_entry.create_text_distance(
+        self.create_entry.create_text_distance(
             version, revs[0], revs[1], distances[0]
         )
         #rev 2 to rev 3 distance
-        self.create_page_entry.create_text_distance(
+        self.create_entry.create_text_distance(
             version, revs[1], revs[2], distances[1]
         )
         #rev 1 to rev 3 distance
-        self.create_page_entry.create_text_distance(
+        self.create_entry.create_text_distance(
             version, revs[0], revs[2], distances[2]
         )
         return ret
@@ -108,7 +108,9 @@ class computation_engine_db_controller:
     def get_all_triangles_chronological(self, version, page_id):
         x = self.db.triangles.page_id == page_id
         y = self.db.triangles.version == version
-        all_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_2)
+        all_triangles = self.db(x & y).iterselect(
+            orderby=self.db.triangles.rev_id_2
+        )
         all_triangle_ids = []
         for row in all_triangles:
             all_triangle_ids.append(row.id)
@@ -128,7 +130,8 @@ class computation_engine_db_controller:
     #return boolean corresponding to text_retrieved
     def check_text_retrieved(self, rev_id):
         x = self.db.revision.rev_id == rev_id
-        ret = self.db(x).select(self.db.revision.text_retrieved).first().text_retrieved
+        ret = self.db(x).select(self.db.revision.text_retrieved
+                               ).first().text_retrieved
         return ret
 
     #parameters: version, stage, page_id, revision
@@ -137,8 +140,8 @@ class computation_engine_db_controller:
         x = self.db.revision_log.version == version
         y = self.db.revision_log.page_id == page_id
         rev_log = self.db(x & y).select().first()
-        if(rev_log == None):
-            rev_log = self.create_page_entry.create_revision_log(
+        if (rev_log == None):
+            rev_log = self.create_entry.create_revision_log(
                 version, stage, page_id, rev, date.today()
             )
         else:
@@ -155,7 +158,9 @@ class computation_engine_db_controller:
     def get_all_unprocessed_triangles(self, version):
         x = self.db.triangles.version == version
         y = self.db.triangles.reputation_inc == None
-        unprocessed_triangles = self.db(x & y).iterselect(orderby=self.db.triangles.rev_id_2)
+        unprocessed_triangles = self.db(x & y).iterselect(
+            orderby=self.db.triangles.rev_id_2
+        )
         rows = list(unprocessed_triangles)
         unprocessed_triangle_ids = []
         for row in rows:
@@ -163,28 +168,36 @@ class computation_engine_db_controller:
         return unprocessed_triangle_ids
 
     #parameters: page_id
-    #return: environment
+    #return: environment_id
+    # TODO: this is not written write
     def get_environment_by_page_id(self, page_id):
         x = self.db.page.page_id == page_id
-        return self.db(x).select(self.db.page.environment_id).first().environment_id
+        return self.db(x).select(self.db.page.environment_id
+                                ).first().environment_id
 
     #parameters: eviroment_name
     #return: environment
-    def get_environment_by_name(self, eviroment_name):
-        x = self.db.environments.page_id == page_id
-        return self.db(x).select(self.db.page.environment_id).first().environment_id
+    def get_environment_by_name(self, evironment_name):
+        x = self.db.environment.environment_name == evironment_name
+        return self.db(x).select().first()
 
     #parameters: triangle.id
     #return: 3 tuples with three tuples inside
     # (rev1,rev2,rev3),(user_id1,...,...),(distance 1-2, distance 2-3, distance 1-3)
     def get_triangle_info(self, id):
         triangle = self.db(self.db.triangles.id == id).select().first()
-        rev_tuple = (triangle.rev_id_1,triangle.rev_id_2,triangle.rev_id_3)
+        rev_tuple = (triangle.rev_id_1, triangle.rev_id_2, triangle.rev_id_3)
 
-        user_1 = self.db(self.db.revision.rev_id == rev_tuple[0]).select(self.db.revision.user_id).first().user_id
-        user_2 = self.db(self.db.revision.rev_id == rev_tuple[1]).select(self.db.revision.user_id).first().user_id
-        user_3 = self.db(self.db.revision.rev_id == rev_tuple[2]).select(self.db.revision.user_id).first().user_id
-        user_tuple = (user_1,user_2,user_3)
+        user_1 = self.db(self.db.revision.rev_id == rev_tuple[0]).select(
+            self.db.revision.user_id
+        ).first().user_id
+        user_2 = self.db(self.db.revision.rev_id == rev_tuple[1]).select(
+            self.db.revision.user_id
+        ).first().user_id
+        user_3 = self.db(self.db.revision.rev_id == rev_tuple[2]).select(
+            self.db.revision.user_id
+        ).first().user_id
+        user_tuple = (user_1, user_2, user_3)
 
         distance_1_q_1 = self.db.text_distance.rev_id_1 == rev_tuple[0]
         distance_1_q_2 = self.db.text_distance.rev_id_2 == rev_tuple[1]
@@ -195,9 +208,15 @@ class computation_engine_db_controller:
         distance_3_q_1 = self.db.text_distance.rev_id_1 == rev_tuple[0]
         distance_3_q_2 = self.db.text_distance.rev_id_2 == rev_tuple[2]
 
-        distance_1 = self.db(distance_1_q_1 & distance_1_q_2).select(self.db.text_distance.distance).first().distance
-        distance_2 = self.db(distance_2_q_1 & distance_2_q_2).select(self.db.text_distance.distance).first().distance
-        distance_3 = self.db(distance_3_q_1 & distance_3_q_2).select(self.db.text_distance.distance).first().distance
+        distance_1 = self.db(distance_1_q_1 & distance_1_q_2).select(
+            self.db.text_distance.distance
+        ).first().distance
+        distance_2 = self.db(distance_2_q_1 & distance_2_q_2).select(
+            self.db.text_distance.distance
+        ).first().distance
+        distance_3 = self.db(distance_3_q_1 & distance_3_q_2).select(
+            self.db.text_distance.distance
+        ).first().distance
         distance_tuple = (distance_1, distance_2, distance_3)
 
         info = (rev_tuple, user_tuple, distance_tuple)
@@ -214,3 +233,13 @@ class computation_engine_db_controller:
     def get_user_from_rev(self, rev_id):
         x = self.db.revision.rev_id == rev_id
         return self.db(x).select(self.db.revision.user_id).first().user_id
+
+    @autocommit
+    def update_page_last_check_time(self, page_id, last_check_time):
+        try:
+            self.db(self.db.page.page_id == page_id
+                   ).update(last_check_time=last_check_time)
+            return True  # success
+        except:
+            self.db.rollback()
+            return False  # failed

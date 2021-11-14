@@ -24,8 +24,9 @@
     "typescript": "~3.7.0"
   },
   "scripts": {
-    "prod_build": "parcel build ./src/main.ts --out-dir ./core --out-file ./WikiTrust.js",
+    "start": "npm run auto_build",
     "auto_build": "parcel watch ./src/main.ts --out-dir ./core --out-file ./WikiTrust.js",
+    "prod_build": "parcel build ./src/main.ts --out-dir ./core --out-file ./WikiTrust.js",
     "gts_check": "gts check",
     "gts_clean": "gts clean",
     "gts_fix": "gts fix"

@@ -14,45 +14,52 @@
         }
 
         #gradient {
-            height: 40px;
-            width: 100vw;
-
             position: fixed;
             bottom: 0;
+
+            width: 100vw;
+            height: 40px;
+
             background: linear-gradient(to right, #fc4a1a, #f7b733, #fef9ee);
         }
 
         #gradient span {
             position: absolute;
-            display: inline-block;
+            z-index: 2;
             top: 12px;
             left: 10px;
-            z-index: 2;
+
+            display: inline-block;
         }
 
         #gradient span#gradient_max {
-            left: unset;
             right: 10px;
+            left: unset;
         }
 
         #gradient_marker {
-            height: 100%;
             position: absolute;
-            width: 2px;
-            background-color: rgb(12, 18, 22);
-            left: 0;
             top: 0;
+            left: 0;
+
+            width: 2px;
+            height: 100%;
+
             transition: left 0.2s ease;
+
+            background-color: rgb(12, 18, 22);
         }
 
         #trust_score {
             position: fixed;
-            left: 0;
             bottom: 40px;
-            background: black;
-            color: white;
-            padding: 8px 17px;
+            left: 0;
+
             margin: 0;
+            padding: 8px 17px;
+
+            color: white;
+            background: black;
         }
     </style>
 </head>
@@ -64,8 +71,8 @@
     </div>
     <div style="margin: 16px;">
         <label for="page_id_input">Page Id: </label>
-        <input type="text" placeholder="Page Id" id="page_id_input" value="...">
-        <button id="page_id_input_button" disabled>Fetch Latest Page Revision</button>
+        <input type="text" placeholder="Page Id" id="page_id_input" value="">
+        <button id="page_id_input_button">Fetch Latest Page Revision</button>
     </div>
     <div style="margin: 16px;">
         <label for="revision_id_input">Revision Id: </label>
@@ -114,6 +121,11 @@
             fetchRevisionTextTrust(revId)
         }
 
+            document.getElementById("page_id_input_button").onclick = function () {
+                pageId = document.getElementById("page_id_input").value;
+                fetchPageLatestTextTrust(pageId)
+            }
+
         function fetchPageId(revisionId) {
             container.innerHTML = "Getting Page id..."; // clear old elements;
             fetch('/api?action=get_page_from_revision_id&revision_id=' + revisionId).then(response => response.json()).then(data => {
@@ -133,6 +145,7 @@
                 fetch('/api?action=get_previous_revision_id&revision_id=' + revisionId).then(response => response.json()).then(data => {
                     console.log("Got prev rev for revision (" + revisionId + ") from server: ", data)
                     if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                    if (!data.rev_id) { return container.innerHTML = 'You have reached the earliest revision' }
                     document.getElementById("revision_id_input").value = data.rev_id
                     fetchRevisionTextTrust(data.rev_id)
                     currentRevisionId = data.rev_id
@@ -154,6 +167,7 @@
                 fetch('/api?action=get_next_revision_id&revision_id=' + revisionId).then(response => response.json()).then(data => {
                     console.log("Got next rev for revision (" + revisionId + ") from server: ", data)
                     if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                    if (!data.rev_id) { return container.innerHTML = 'You have reached the latest revision' }
                     document.getElementById("revision_id_input").value = data.rev_id
                     fetchRevisionTextTrust(data.rev_id)
                     currentRevisionId = data.rev_id
@@ -164,6 +178,21 @@
                 });
             }
         }
+
+            function fetchPageLatestTextTrust(pageId) {
+                container.innerHTML = "Getting Latest Revision Text..."; // clear old elements;
+                fetch('/api?action=get_latest_page_text_trust&page_id=' + pageId).then(response => response.json()).then(data => {
+                    console.log("Got latest revision text for page (" + pageId + ") from server: ", data)
+                    if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                    currentRevisionId = data.rev_id
+                    document.getElementById("revision_id_input").value = currentRevisionId
+                    updateBody(data.values.words, data.values.trust_values)
+                    cache[revisionId] = cache[revisionId] || {};
+                    cache[revisionId]['words'] = data.values.words;
+                    cache[revisionId]['trust_values'] = data.values.trust_values;
+                });
+            }
+        
 
         function fetchRevisionTextTrust(revisionId) {
             currentRevisionId = revisionId
@@ -186,7 +215,8 @@
 
         function updateBody(wordList, trustList) {
             container.innerHTML = ""; // clear old elements;
-            document.getElementById("info_area").innerText = "Current Version Index: TODO";
+            globalMax = findGlobalMax(trustList);
+            document.getElementById("info_area").innerText = "Current Version Index: TO BE IMPLEMENTED";
             document.getElementById("gradient_max").innerText = globalMax;
             for (let index = 0; index < wordList.length; index++) {
                 const word = wordList[index];

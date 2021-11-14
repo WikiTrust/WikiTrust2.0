@@ -71,7 +71,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             'revision',
 
             # Various IDs on Wikipedia.
-            Field('rev_id', 'integer', unique = True),
+            Field('rev_id', 'integer', unique=True),
             Field('page_id', 'integer'),
             Field('user_id', 'integer'),
 
@@ -86,7 +86,7 @@ def connect_to_db(uri = 'sqlite://storage.sqlite'):
             # None if first revision for a page.
             Field('prev_rev', 'integer'),
 
-            # POTENTIALLY REDUNDANT: Index used for storage_engine blob population
+            # POTENTIALLY REDUNDANT, BUT USED: Index used for storage_engine blob population and final score display?
             Field('rev_idx', 'integer'),
 
             # True means retrieved, False means not retrieved.

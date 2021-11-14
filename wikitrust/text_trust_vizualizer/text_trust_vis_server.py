@@ -63,8 +63,10 @@ def MakeHandlerClassWithParameters(
                             + query
                         )
 
-                    reply = apiHandlerClass.handle_api_request(
-                        queryParams=query_components
+                    reply = json.dumps(
+                        apiHandlerClass.handle_api_request(
+                            queryParams=query_components
+                        )
                     )
                     return self.reply_with_success(bodyStr=reply)
             except Exception as e:
@@ -84,35 +86,49 @@ class text_trust_visualization_server:
         self.revStore = revStore
         self.textTrustStore = textTrustStore
 
-    def get_latest_text_trust(self, pageId) -> str:
-        return json.dumps(
-            {"error": "API Unimplemented. Passed pageID:" + pageId}
-        )
+    def get_latest_page_text_trust(self, pageId) -> str:
+        if (pageId == None or pageId == ""):
+            raise Exception("get_latest_page_text_trust() - Got Passed Null Page ID!")
+        rev_id = self.frontend_db_ctrl.get_most_recent_rev_id(page_id=pageId)
+        return {
+            "rev_id": rev_id,
+            "values": self.get_revision_text_trust(rev_id)
+        }
 
     def get_revision_text_trust(self, revisionId) -> str:
+        if (revisionId == None or revisionId == ""):
+            raise Exception("get_revision_text_trust() - Got Passed Null Revision ID!")
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
         text_trust = self.textTrustStore.read(
             page_id=page_id, rev_id=revisionId
         )
         text_words = self.revStore.read(page_id=page_id, rev_id=revisionId)
-        return json.dumps(
-            {
-                "words": json.loads(text_words),
-                "trust_values": json.loads(text_trust)
-            }
-        )
+        return {
+            "words": json.loads(text_words),
+            "trust_values": json.loads(text_trust)
+        }
 
     def get_page_from_revision_id(self, revisionId) -> str:
+        if (revisionId == None or revisionId == ""):
+            raise Exception(
+                "get_page_from_revision_id() - Got Passed Null Revision ID!"
+            )
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
-        return json.dumps({"page_id": page_id})
+        return {"page_id": page_id}
 
     def get_previous_revision_id(self, revisionId) -> str:
+        if (revisionId == None or revisionId == ""):
+            raise Exception(
+                "get_previous_revision_id() - Got Passed Null Revision ID!"
+            )
         prev_rev_id = self.frontend_db_ctrl.get_prev_rev(rev_id=revisionId)
-        return json.dumps({"rev_id": prev_rev_id})
+        return {"rev_id": prev_rev_id}
 
     def get_next_revision_id(self, revisionId) -> str:
+        if (revisionId == None or revisionId == ""):
+            raise Exception("get_next_revision_id() - Got Passed Null Revision ID!")
         prev_rev_id = self.frontend_db_ctrl.get_next_rev(rev_id=revisionId)
-        return json.dumps({"rev_id": prev_rev_id})
+        return {"rev_id": prev_rev_id}
 
     def get_query_parameter(self, params, key):
         try:
@@ -126,9 +142,9 @@ class text_trust_visualization_server:
 
         action = self.get_query_parameter(queryParams, 'action')
 
-        if (action == 'get_latest_text_trust'):
+        if (action == 'get_latest_page_text_trust'):
             page_id = self.get_query_parameter(queryParams, 'page_id')
-            return self.get_latest_text_trust(page_id)
+            return self.get_latest_page_text_trust(page_id)
 
         elif (action == 'get_revision_text_trust'):
             revision_id = self.get_query_parameter(queryParams, 'revision_id')
@@ -161,13 +177,15 @@ class text_trust_visualization_server:
             apiHandlerClass=self
         )
 
-        print('Starting server...')
+        print('\nStarting server...')
         httpd = HTTPServer(server_address, requestHandler)
 
         print(
             'Running server - open your browser to: http://localhost:' +
-            str(port) +
-            ' or run the extension/bookmarklet on a wikipedia page (this assumes the port is 8000) '
+            str(port)
+        )
+        print(
+            'Or run the extension/bookmarklet on a wikipedia page - the extension assumes port=8000\n'
         )
 
         # Start the server in a new thread

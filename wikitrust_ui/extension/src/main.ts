@@ -103,7 +103,7 @@ const processScores = (
   }
   UI.hideLoadingAnimation();
   completionStage = consts.COMPLETION_STAGES.page_processed; // Mark that WikiTrust has finished setup.
-  UI.removeUi();
+  // UI.removeUi();
 };
 
 const setupWikiTrust = () => {
@@ -112,22 +112,29 @@ const setupWikiTrust = () => {
   UI.showLoadingAnimation();
   const splitData = runPageSplitter(WIKI_CONTENT_TEXT_ELEMENT);
   console.log('splitData: ', splitData);
-  // fetchScores() // comment out generateFakeScores and uncoment this to use the real python algorithms
-  // const {revId,pageId} =
-  console.log("fetching vars")
-  runFunctionInPageContext(getWikipediaPageMetaData).then((pageMetaData:any)=>{
-    fetchScores(pageMetaData.revId,pageMetaData.pageId).then((serverResponse) => {
-      if (serverResponse.error) {
-        alert("(WILL SHOW FAKE SCORES) server error:" + JSON.stringify(serverResponse));
-        generateFakeScores(splitData.pageWordList).then((serverResponse) => {
-          processScores(serverResponse, splitData);
-        });
-      } else processScores(serverResponse, splitData);
-    }).catch(console.warn);
-  completionStage = consts.COMPLETION_STAGES.api_sent;
-  }); //();
-
-};
+  console.log('Fetching page data');
+  runFunctionInPageContext(getWikipediaPageMetaData).then(
+    (pageMetaData: any) => {
+      // fetchScores(pageMetaData.revId, pageMetaData.pageId); // comment out generateFakeScores and uncoment this to use the real python backend
+      generateFakeScores(splitData.pageWordList)
+        .then((serverResponse) => {
+          if (serverResponse.error) {
+            alert(
+              '(WILL SHOW FAKE SCORES) server error:' +
+                JSON.stringify(serverResponse)
+            );
+            generateFakeScores(splitData.pageWordList).then(
+              (serverResponse) => {
+                processScores(serverResponse, splitData);
+              }
+            );
+          } else processScores(serverResponse, splitData);
+        })
+        .catch(console.warn);
+      completionStage = consts.COMPLETION_STAGES.api_sent;
+    }
+  ); //();
+};;
 
 const handleActivateButtonClick = () => {
   if (completionStage === consts.COMPLETION_STAGES.base_ui_injected) {
