@@ -16,7 +16,7 @@ class PageProcessor:
         """
 
         text = page.text
-        wikiCode = mwparserfromhell.parse(text)
+        wikiCode = mwparserfromhell.parse(text, skip_style_tags=True)
 
         if headers is None:
             sections = wikiCode.get_sections(include_headings=True, flat=flat)
@@ -37,7 +37,8 @@ class PageProcessor:
         Arguments:
             wikiCode {mwparserfromhell.wikicode.Wikicode} -- wikicode for a page or a section.
         """
-        return wikiCode.strip_code()
+        wikiCode.
+        return wikiCode.strip_code(normalize=False)
 
     def getReadableText(self, wikiText: str):
         """ Performs a naiveStrip on a string of wikiText and then passes the text through mwparserfromhell

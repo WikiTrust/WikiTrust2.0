@@ -91,7 +91,7 @@ class main_backend_controller:
 
         current_page_id = pyWiki_Page.pageid
         print(
-            "Pulling page ", pyWiki_Page.title(), "revisons with ID:",
+            "Pulling page ", pyWiki_Page.title(), "revisions with ID:",
             current_page_id
         )
 
@@ -154,7 +154,7 @@ class main_backend_controller:
                 WikiRevPuller.get_text_of_old_revision(pyWiki_Page, rev_id)
             )
 
-            #convert the text string to a json encoded array of words (by splitting revison text on whitespace)
+            #convert the text string to a json encoded array of words (by splitting revision text on whitespace)
             rev_text = json.dumps(rev_text.split())
 
             # store the cleaned word array json in the storage engine (meaning: google clound sstorage in bundles)

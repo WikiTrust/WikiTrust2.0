@@ -1,4 +1,4 @@
-// dictionary of html element types to apply the word spliting / wrapping functions to and then add the contained word elements to the wordNodes array.
+// dictionary of html element types to apply the word spliting / wrapping functions to and then add the newly created word elements to the wordNodes array.
 export const REPLACE_WORDS_IN: { [key: string]: boolean } = {
   p: true,
   a: true,

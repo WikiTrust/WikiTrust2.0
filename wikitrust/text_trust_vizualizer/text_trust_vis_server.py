@@ -99,13 +99,17 @@ class text_trust_visualization_server:
         if (revisionId == None or revisionId == ""):
             raise Exception("get_revision_text_trust() - Got Passed Null Revision ID!")
         page_id = self.frontend_db_ctrl.get_page_from_rev(rev_id=revisionId)
+        revisionIdx = self.frontend_db_ctrl.get_most_recent_rev_index(
+            page_id=page_id
+        )
         text_trust = self.textTrustStore.read(
             page_id=page_id, rev_id=revisionId
         )
         text_words = self.revStore.read(page_id=page_id, rev_id=revisionId)
         return {
             "words": json.loads(text_words),
-            "trust_values": json.loads(text_trust)
+            "trust_values": json.loads(text_trust),
+            "revision_index": revisionIdx
         }
 
     def get_page_from_revision_id(self, revisionId) -> str:

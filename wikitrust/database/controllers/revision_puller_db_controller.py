@@ -24,7 +24,7 @@ class revsion_puller_db_controller:
             # revision_row.index = rep
             # revision_row.update_record()
             # rev_formated_dict_arry
-            # self.db.revison.insert()
+            # self.db.revision.insert()
 
     """
     DEBUG Function to print the whole revision table

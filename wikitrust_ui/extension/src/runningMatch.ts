@@ -135,6 +135,7 @@ export const getWordMatchMapping = (
   sourceWordList: string[],
   targetWordList: string[]
 ) => {
+  console.groupCollapsed('==== Finding Word Mappings ====');
   sourceWords = sourceWordList;
   targetWords = targetWordList;
   while (true) {
@@ -157,7 +158,10 @@ export const getWordMatchMapping = (
         targetWordIndex,
         WordOrigin.target
       );
-      if (checkCrossMatch(currSourceWord, currTargetWord)) continue;
+      console.group('Checking for cross matches...');
+      var crossMatchFound = checkCrossMatch(currSourceWord, currTargetWord);
+      console.groupEnd();
+      if (crossMatchFound) continue;
     }
 
     if (targetWordIndex < targetWords.length - 1) targetWordIndex++;
@@ -174,5 +178,6 @@ export const getWordMatchMapping = (
       wordMatchIndicieDictionary = {};
     }
   }
+  console.groupEnd();
   return sourceToTargetMapping;
 };

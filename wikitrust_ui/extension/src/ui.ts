@@ -67,16 +67,18 @@ const buildMarkContainer = () => {
 };
 
 /* shows the gradient dial, sets the position dial pointer to the correct position on the gradient dial and sets the color scheme to match. */
-const showTrustScore = (score:number) => {
+export const showTrustScore = (score: number) => {
   window.WikiTrustGlobalVars.uiFrameContainer!.classList.add('showing-score');
-  activateWTButton.innerText = score.toFixed(1);
-  activateWTButton.style.borderColor = getColorForPercentage((1-score),1);
-  WTDialPointer.style.transform = `rotate(${(1-score) * 90}deg)`;
-}
-const hideTrustScore = () => {
-  window.WikiTrustGlobalVars.uiFrameContainer!.classList.remove('showing-score');
+  activateWTButton.innerText = (score * 100).toFixed(1);
+  activateWTButton.style.borderColor = getColorForPercentage(1 - score, 1);
+  WTDialPointer.style.transform = `rotate(${(1 - score) * 90}deg)`;
+};
+export const hideTrustScore = () => {
+  window.WikiTrustGlobalVars.uiFrameContainer!.classList.remove(
+    'showing-score'
+  );
   activateWTButton.innerHTML = 'W<sub>T</sub>';
-}
+};
 
 /**
  * Adds a marker/dot element on the left side of the article which corresponds to a particular grouping.
@@ -105,7 +107,7 @@ export const addTextGroupMark = (
     //   markElement,
     //   'Max Score: ' + Math.round(score * 1000) / 1000
     // );
-    showTrustScore(score * 100);
+    showTrustScore(score);
   };
   markElement.onmouseleave = (e) => {
     groupingElement.classList.add('trust-hidden');

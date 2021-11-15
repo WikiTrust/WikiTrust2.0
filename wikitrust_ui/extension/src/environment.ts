@@ -1,4 +1,5 @@
 import * as consts from './consts';
+import * as interfaces from './interfaces';
 
 // Checks where this code is running (firefox_extension, chrome_extension, or bookmarklet).
 // Provides methods that abstract away environment-dependant things (such as fetching other parts of the app).
@@ -49,8 +50,10 @@ let runFunctionInPageContext_lock: boolean = false;
 /* returns a promise that resolves with the return value of the function
 // Idea from: https://stackoverflow.com/questions/3955803/chrome-extension-get-page-variables-in-content-script
 */
+
 export const runFunctionInPageContext = (fn: Function) => {
-  return new Promise((resolve, reject) => {
+  // Note: this promise is of type interfaces.PageMetaData purely because that's the only type we use it with, you'll need to refactor this to use multiple types.
+  return new Promise<interfaces.PageMetaData>((resolve, reject) => {
     if (envIsBookmarklet()) resolve(fn());
     else if (ENVIRONMENT === consts.ENVIRONMENTS.chrome_extension) {
       if (runFunctionInPageContext_lock == true) {
@@ -66,7 +69,7 @@ export const runFunctionInPageContext = (fn: Function) => {
         'message',
         ({ data }) => {
           // We only accept messages from ourselves
-          let result = data.wikiTrustPageContextRun;
+          let result: interfaces.PageMetaData = data.wikiTrustPageContextRun;
           if (data.wikiTrustPageContextRun) resolve(result);
         },
         false

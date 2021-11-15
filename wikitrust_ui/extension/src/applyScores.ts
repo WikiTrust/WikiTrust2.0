@@ -1,5 +1,12 @@
 import * as interfaces from './interfaces';
-import { showTooltipAtElement } from './tooltip';
+import * as UI from './ui';
+// import { showTooltipAtElement } from './tooltip'; // not needed anymore, score is shown in corner
+
+export const calculateScaledScore = (score: number) => {
+  var x = score / window.WikiTrustGlobalVars.revisionIndex;
+  var Y = 1 / (1 + Math.exp(4.5 - 9 * x)); // sigmoid function https://www.desmos.com/calculator/ksmz4tnvyc
+  return Y;
+};
 
 /**
  * Returns true if the character code is a whitespace character.
@@ -57,18 +64,20 @@ const insertWordChunk = (textNode: Node, wordChunk: string, score: number) => {
   wordChunkElement.textContent = wordChunk;
   wordChunkElement.className = 'wt-word-chunk';
   wordChunkElement.setAttribute('trust', score.toString()); // for debug
-  wordChunkElement.onmouseover = (e) => {
-    showTooltipAtElement(
-      wordChunkElement,
-      'Scaled Score:</br>' + Math.round(score * 1000) / 1000
-    );
+  score = calculateScaledScore(score);
+  wordChunkElement.onmouseenter = (e) => {
+    UI.showTrustScore(score);
   };
-  if (score >= 0) {
+  wordChunkElement.onmouseleave = (e) => {
+    UI.hideTrustScore();
+  };
+  if (score <= 1 && score !== 0) {
     // if the word has a score applied
     wordChunkElement.style.borderBottom = `1px solid ${getColorForPercentage(
       score,
       1
     )}`;
+    wordChunkElement.style.color = `green`;
     wordChunkElement.style.backgroundColor = getColorForPercentage(score, 0.1);
   } else wordChunkElement.style.borderBottom = `2px solid lightgrey`; // if the wordChunk was not matched to the algorithim's output, highlight blue
   parentElement.insertBefore(wordChunkElement, textNode);
@@ -79,23 +88,23 @@ const insertWordChunk = (textNode: Node, wordChunk: string, score: number) => {
  * @param textNodesPerGroup - An array of arrays of text DOM Nodes where the Nth array corresponds to the Nth grouping element and each node within that array is a text node in that grouping element.
  * @param wordScores - An array of trust scores where the Nth score corresponds to the Nth word on the page
  * @param maxWordScore - The maximum trust score in this article
- * @returns - An array containing the maximum trust score for each grouping element.
+ * @returns - An array containing the minimum trust score for each grouping element.
  */
 export const applyWordScores = (
   textNodesPerGroup: Node[][],
   wordScores: number[],
-  maxWordScore: number
+  minWordScore: number
 ) => {
-  const maxTrustPerGroup: number[] = [];
+  const minTrustPerGroup: number[] = [];
   let currWordIndex = 0;
   let lastCharWasWhitespace = false;
   for (let gi = 0, len = textNodesPerGroup.length; gi < len; gi++) {
-    let maxTrustInThisGroup = 0;
+    let minTrustInThisGroup = 0;
     for (let ti = 0, len = textNodesPerGroup[gi].length; ti < len; ti++) {
       const textNode = textNodesPerGroup[gi][ti];
       const nodeText = textNode.nodeValue || '';
       let wordChunkStartIndex = 0;
-      let scaledScore = wordScores[currWordIndex] / maxWordScore;
+      let scaledScore = wordScores[currWordIndex] / minWordScore;
       const len = nodeText.length;
       let allCharsAreWhitespace = true;
       // loop through every character in this text node finding words.
@@ -106,8 +115,8 @@ export const applyWordScores = (
         if (!currCharIsWhitespace && lastCharWasWhitespace) {
           allCharsAreWhitespace = false;
           if (wordScores[currWordIndex] !== wordScores[currWordIndex + 1]) {
-            if (scaledScore > maxTrustInThisGroup)
-              maxTrustInThisGroup = scaledScore;
+            if (scaledScore < minTrustInThisGroup)
+              minTrustInThisGroup = scaledScore;
             insertWordChunk(
               textNode,
               nodeText.substring(wordChunkStartIndex, charindex),
@@ -126,19 +135,19 @@ export const applyWordScores = (
             nodeText.substring(wordChunkStartIndex, len),
             scaledScore
           );
-          if (scaledScore > maxTrustInThisGroup)
-            maxTrustInThisGroup = scaledScore;
+          if (scaledScore < minTrustInThisGroup)
+            minTrustInThisGroup = scaledScore;
         }
       } else if (!charCodeIsWhitespace(nodeText.charCodeAt(0))) {
         insertWordChunk(textNode, nodeText.substring(0, len), scaledScore);
-        if (scaledScore > maxTrustInThisGroup)
-          maxTrustInThisGroup = scaledScore;
+        if (scaledScore < minTrustInThisGroup)
+          minTrustInThisGroup = scaledScore;
       } else if (allCharsAreWhitespace) {
         insertWordChunk(textNode, nodeText.substring(0, len), 0);
       }
-      textNode.parentNode?.removeChild(textNode);
+      // textNode.parentNode?.removeChild(textNode);
     }
-    maxTrustPerGroup.push(maxTrustInThisGroup);
+    minTrustPerGroup.push(minTrustInThisGroup);
   }
-  return maxTrustPerGroup;
+  return minTrustPerGroup;
 };

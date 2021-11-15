@@ -1,8 +1,9 @@
 interface WikiTrustGlobalVars {
   completionStage: number;
   trustVisible: boolean;
+  revisionIndex: number;
   styleElm?: HTMLElement;
-  uiFrameContainer?: HTMLElement;
+  uiFrameContainer?: HTMLElement; // not used anymore
 }
 
 declare global {
@@ -25,6 +26,7 @@ export interface PageMetaData {
 export interface serverScoresResponse {
   words: string[];
   scores: number[];
+  revisionIndex: number;
   error?: string;
 }
 
