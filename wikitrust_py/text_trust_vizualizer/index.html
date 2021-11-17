@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Wikitrust Viz</title>
+    <meta name="author" content="Kyle">
+    <style>
+        body {
+            margin: 0;
+            margin-bottom: 80px;
+        }
+
+        #gradient {
+            position: fixed;
+            bottom: 0;
+
+            width: 100vw;
+            height: 40px;
+
+            background: linear-gradient(to right, #fc4a1a, #f7b733, #fef9ee);
+        }
+
+        #gradient span {
+            position: absolute;
+            z-index: 2;
+            top: 12px;
+            left: 10px;
+
+            display: inline-block;
+        }
+
+        #gradient span#gradient_max {
+            right: 10px;
+            left: unset;
+        }
+
+        #gradient_marker {
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            width: 2px;
+            height: 100%;
+
+            transition: left 0.2s ease;
+
+            background-color: rgb(12, 18, 22);
+        }
+
+        #trust_score {
+            position: fixed;
+            bottom: 40px;
+            left: 0;
+
+            margin: 0;
+            padding: 8px 17px;
+
+            color: white;
+            background: black;
+        }
+    </style>
+</head>
+
+<body style="text-align: center;font-size: large;font-family: monospace;">
+
+    <div id="gradient"><span>0</span>
+        <div id="gradient_marker"></div><span id="gradient_max">1</span>
+    </div>
+    <div style="margin: 16px;">
+        <label for="page_id_input">Page Id: </label>
+        <input type="text" placeholder="Page Id" id="page_id_input" value="">
+        <button id="page_id_input_button">Fetch Latest Page Revision</button>
+    </div>
+    <div style="margin: 16px;">
+        <label for="revision_id_input">Revision Id: </label>
+        <input type="text" placeholder="Revision Id" id="revision_id_input" value="">
+        <button id="revision_id_input_button">Fetch Revision</button>
+    </div>
+    <h3 id="info_area">...</h3>
+    <h4>(Use ← & → keys to change revision)</h4>
+    <div id="Text_Container"></div>
+    <h4 id="trust_score">Hover over words for details...</h4>
+
+    <script type="text/javascript">
+        const getColorForPercentage = (pct, opacity) => { // Source: https://stackoverflow.com/questions/7128675/from-green-to-red-color-depend-on-percentage
+            const percentColorsGradient = [ // Define a gradient (0 = least trustworthy color, 1 = most trustworthy color)
+                { pct: 0.0, color: { r: 0xfc, g: 0x4a, b: 0x1a } }, // #fc4a1a
+                { pct: 0.5, color: { r: 0xf7, g: 0xb7, b: 0x33 } }, // #f7b733
+                { pct: 1.0, color: { r: 0xff, g: 0xff, b: 0xff } }  // white
+            ];
+            for (var i = 1; i < percentColorsGradient.length - 1; i++) {
+                if (pct < percentColorsGradient[i].pct) {
+                    break;
+                }
+            }
+            const lower = percentColorsGradient[i - 1];
+            const upper = percentColorsGradient[i];
+            const range = upper.pct - lower.pct;
+            const rangePct = (pct - lower.pct) / range;
+            const pctLower = 1 - rangePct;
+            const pctUpper = rangePct;
+            const color = {
+                r: Math.floor(lower.color.r * pctLower + upper.color.r * pctUpper),
+                g: Math.floor(lower.color.g * pctLower + upper.color.g * pctUpper),
+                b: Math.floor(lower.color.b * pctLower + upper.color.b * pctUpper)
+            };
+            return `rgba(${[color.r, color.g, color.b, opacity].join(',')})`;
+            // or output as hex if preferred
+        };
+
+        var currentRevisionId = 0, globalMax = 0;
+        var cache = {}
+        var container = document.getElementById("Text_Container");
+
+        document.getElementById("revision_id_input_button").onclick = function () {
+            revId = document.getElementById("revision_id_input").value;
+            fetchPageId(revId)
+            fetchRevisionTextTrust(revId)
+        }
+
+            document.getElementById("page_id_input_button").onclick = function () {
+                pageId = document.getElementById("page_id_input").value;
+                fetchPageLatestTextTrust(pageId)
+            }
+
+        function fetchPageId(revisionId) {
+            container.innerHTML = "Getting Page id..."; // clear old elements;
+            fetch('/api?action=get_page_from_revision_id&revision_id=' + revisionId).then(response => response.json()).then(data => {
+                console.log("Got pageid for revision (" + revisionId + ") from server: ", data)
+                if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                document.getElementById("page_id_input").value = data.page_id
+            });
+        }
+
+        function fetchPrevRevision(revisionId) {
+            if (cache[revisionId] && cache[revisionId]['prev_rev']) {
+                document.getElementById("revision_id_input").value = cache[revisionId]['prev_rev']
+                fetchRevisionTextTrust(cache[revisionId]['prev_rev'])
+                currentRevisionId = cache[revisionId]['prev_rev']
+            } else {
+                container.innerHTML = "Getting prev rev..."; // clear old elements;
+                fetch('/api?action=get_previous_revision_id&revision_id=' + revisionId).then(response => response.json()).then(data => {
+                    console.log("Got prev rev for revision (" + revisionId + ") from server: ", data)
+                    if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                    if (!data.rev_id) { return container.innerHTML = 'You have reached the earliest revision' }
+                    document.getElementById("revision_id_input").value = data.rev_id
+                    fetchRevisionTextTrust(data.rev_id)
+                    currentRevisionId = data.rev_id
+                    cache[revisionId] = cache[revisionId] || {};
+                    cache[data.rev_id] = cache[data.rev_id] || {};
+                    cache[revisionId]['prev_rev'] = data.rev_id
+                    cache[data.rev_id]['next_rev'] = revisionId;
+                });
+            }
+        }
+
+        function fetchNextRevision(revisionId) {
+            if (cache[revisionId] && cache[revisionId]['next_rev']) {
+                document.getElementById("revision_id_input").value = cache[revisionId]['next_rev']
+                fetchRevisionTextTrust(cache[revisionId]['next_rev'])
+                currentRevisionId = cache[revisionId]['next_rev']
+            } else {
+                container.innerHTML = "Getting Next rev..."; // clear old elements;
+                fetch('/api?action=get_next_revision_id&revision_id=' + revisionId).then(response => response.json()).then(data => {
+                    console.log("Got next rev for revision (" + revisionId + ") from server: ", data)
+                    if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                    if (!data.rev_id) { return container.innerHTML = 'You have reached the latest revision' }
+                    document.getElementById("revision_id_input").value = data.rev_id
+                    fetchRevisionTextTrust(data.rev_id)
+                    currentRevisionId = data.rev_id
+                    cache[revisionId] = cache[revisionId] || {};
+                    cache[data.rev_id] = cache[data.rev_id] || {};
+                    cache[revisionId]['next_rev'] = data.rev_id
+                    cache[data.rev_id]['prev_rev'] = revisionId;
+                });
+            }
+        }
+
+            function fetchPageLatestTextTrust(pageId) {
+                container.innerHTML = "Getting Latest Revision Text..."; // clear old elements;
+                fetch('/api?action=get_latest_page_text_trust&page_id=' + pageId).then(response => response.json()).then(data => {
+                    console.log("Got latest revision text for page (" + pageId + ") from server: ", data)
+                    if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                    currentRevisionId = data.rev_id
+                    document.getElementById("revision_id_input").value = currentRevisionId
+                    updateBody(data.values.words, data.values.trust_values)
+                    cache[revisionId] = cache[revisionId] || {};
+                    cache[revisionId]['words'] = data.values.words;
+                    cache[revisionId]['trust_values'] = data.values.trust_values;
+                });
+            }
+        
+
+        function fetchRevisionTextTrust(revisionId) {
+            currentRevisionId = revisionId
+            if (cache[revisionId] && cache[revisionId]['words']) {
+                globalMax = findGlobalMax(cache[revisionId]['trust_values']);
+                updateBody(cache[revisionId]['words'], cache[revisionId]['trust_values'])
+            } else {
+                container.innerHTML = "Getting Revision Text..."; // clear old elements;
+                fetch('/api?action=get_revision_text_trust&revision_id=' + revisionId).then(response => response.json()).then(data => {
+                    console.log("Got revision (" + revisionId + ") text trust from server: ", data)
+                    if (data['error']) { return container.innerHTML = 'Server Error: ' + data['error'] }
+                    globalMax = findGlobalMax(data.trust_values);
+                    updateBody(data.words, data.trust_values)
+                    cache[revisionId] = cache[revisionId] || {};
+                    cache[revisionId]['words'] = data.words;
+                    cache[revisionId]['trust_values'] = data.trust_values;
+                });
+            }
+        }
+
+        function updateBody(wordList, trustList) {
+            container.innerHTML = ""; // clear old elements;
+            globalMax = findGlobalMax(trustList);
+            document.getElementById("info_area").innerText = "Current Version Index: TO BE IMPLEMENTED";
+            document.getElementById("gradient_max").innerText = globalMax;
+            for (let index = 0; index < wordList.length; index++) {
+                const word = wordList[index];
+                const trust = trustList[index];
+
+                wordElem = document.createElement("span")
+                wordElem.innerText = word;
+                wordElem.style.borderBottom = `1px solid ${getColorForPercentage(trust / globalMax, 1)}`;
+                wordElem.style.backgroundColor = getColorForPercentage(trust / globalMax, 0.1);
+                wordElem.onmouseover = () => {
+                    document.getElementById("gradient_marker").style.left = window.innerWidth * (trust / globalMax) + "px";
+                    document.getElementById("trust_score").innerText = "Trust Score: " + trust + " -- Max Trust Scaled: " + (trust / globalMax)
+                }
+                container.appendChild(wordElem)
+                container.appendChild(document.createTextNode(" "))
+            }
+        }
+
+        function findGlobalMax(trustList) {
+            max = 0;
+            for (let index = 0; index < trustList.length; index++) {
+                const trust = trustList[index];
+                if (trust > max) max = trust;
+            }
+            return max;
+        }
+
+        function keyDownHandle(e) {
+            e = e || window.event;
+
+            if (e.keyCode == '37') {
+                // left arrow
+                fetchPrevRevision(currentRevisionId)
+            }
+            else if (e.keyCode == '39') {
+                // right arrow
+                fetchNextRevision(currentRevisionId)
+            }
+        }
+        window.addEventListener("keydown", keyDownHandle, false);
+    </script>
+</body>
+
+</html>

@@ -58,7 +58,7 @@
 
   _Note: The following method relies on the WikiTrust.JS being hosted online, so this will load the last pushed version as a demo:_
 
-  1. Drag and drop this link > <a href="javascript:(function(){var%20script=document.createElement('script');script.src='https://combinatronics.com/WikiTrust/WikiTrust2.0/Develop/wikitrust_ui/core/WikiTrust.js';document.getElementsByTagName('head')[0].appendChild(script);script.remove()})()">WikiTrust</a> < into your browser's bookmarks bar, or long press -> save as bookmark on mobile.
+  1. Drag and drop this link > <a href="javascript:(function(){var%20script=document.createElement('script');script.src='https://combinatronics.com/WikiTrust2.0/master/wikitrust_ui/extension/core/WikiTrust.js';document.getElementsByTagName('head')[0].appendChild(script);script.remove()})()">WikiTrust</a> < into your browser's bookmarks bar, or long press -> save as bookmark on mobile.
       - Note this won't work from the Github preview.
   2. To use, visit a wiki page and click the bookmark, as if it was an extension. On mobile, visit a wiki and enter "WikiTrust" in the address bar, then tap the bookmark.
 
@@ -68,7 +68,7 @@
 (function() {
   var script = document.createElement('script');
   script.src =
-    'https://combinatronics.com/WikiTrust/WikiTrust2.0/Develop/wikitrust_ui/core/WikiTrust.js';
+    'https://combinatronics.com/WikiTrust2.0/master/wikitrust_ui/extension/core/WikiTrust.js';
   document.getElementsByTagName('head')[0].appendChild(script);
   script.remove();
 })();

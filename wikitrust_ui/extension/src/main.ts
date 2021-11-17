@@ -1,15 +1,11 @@
 import * as interfaces from './interfaces';
 import * as consts from './consts';
 import * as UI from './ui';
-import { injectTooltip } from './tooltip';
+// import { injectTooltip } from './tooltip'; // Not needed anymore
 import { runPageSplitter } from './splitingAlg';
 import { getWordMatchMapping } from './runningMatch';
-import { applyWordScores } from './applyScores';
-import {
-  envIsBookmarklet,
-  getAsset,
-  runFunctionInPageContext,
-} from './environment';
+import { applyWordScores, calculateScaledScore } from './applyScores';
+import { envIsBookmarklet, runFunctionInPageContext } from './environment';
 import { fetchScores } from './serverAPI';
 
 /* index.ts
@@ -31,6 +27,15 @@ const findMax = (arr: number[]) => {
   return max;
 };
 
+/** @returns The min number in an array of numbers */
+const findMin = (arr: number[]) => {
+  let min = 0;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] < min) min = arr[i];
+  }
+  return min;
+};
+
 /**
  * @param word_list - An array of strings of every word in the current article in order.
  * @returns an object with a scores array and words array where the Nth score corresponds to the Nth word
@@ -41,6 +46,7 @@ const generateFakeScores = (word_list: string[]) => {
     const output: interfaces.serverScoresResponse = {
       words: [],
       scores: [],
+      revisionIndex: 0,
     };
     for (let i = 0; i < word_list.length; i++) {
       const randomNumber = Math.round(Math.random() * 10);
@@ -72,13 +78,19 @@ const getWikipediaPageMetaData = () => {
 
 const processScores = (
   serverResponse: interfaces.serverScoresResponse,
-  splitData:  any // TODO------------------- ACTUAL TYPE
+  splitData: any // TODO: ------------------- ACTUAL TYPE
 ) => {
-  console.log('server response: ', serverResponse);
+  console.log('Server Response: ', serverResponse);
+
+  // mark that the server has responded
   completionStage = consts.COMPLETION_STAGES.api_recived;
   const mapping = getWordMatchMapping(
     serverResponse.words,
     splitData.pageWordList
+  );
+  console.groupCollapsed('==== Wiki Page to Server Word Mappings ====');
+  console.log(
+    'Format: "Word on page" "mapped word from server word list" | index of page word->index of mapped server word '
   );
   const mappedScores = new Array(mapping.length);
   for (let index = 0; index < mapping.length; index++) {
@@ -86,53 +98,81 @@ const processScores = (
     const mappedScore = serverResponse.scores[mapping[index]] || -1;
     mappedScores[index] = mappedScore;
     console.log(
-      splitData.pageWordList[index],
-      mappedWord + ' | ' + index + '->' + mapping[index]
+      '%c"' +
+        splitData.pageWordList[index] +
+        '" "' +
+        mappedWord +
+        '" | ' +
+        index +
+        '->' +
+        mapping[index],
+      //apply color / style based on mapping alignment
+      'color: #0000' +
+        (splitData.pageWordList[index] == mappedWord ? '00' : 'ff') +
+        '; font-weight: ' +
+        (index != mapping[index] ? 'bold' : 'normal') +
+        ';'
     );
   }
+  console.groupEnd();
 
-  const maxTrustPerGroup = applyWordScores(
+  // The revsiionIndex and maxWordScore must be set before displaying the scores, as it is used to normalize them to a 0-1 scale
+  window.WikiTrustGlobalVars.revisionIndex = serverResponse.revisionIndex;
+  window.WikiTrustGlobalVars.maxWordScore = findMax(mappedScores);
+
+  const minTrustPerGroup = applyWordScores(
     splitData.textNodesPerGroup,
-    mappedScores,
-    findMax(mappedScores)
+    mappedScores
   );
   for (let i = 0, len = splitData.groupingElems.length; i < len; i++) {
     const groupingElem = splitData.groupingElems[i];
-    const maxTrustInGroup = maxTrustPerGroup[i];
-    UI.addTextGroupMark(groupingElem, maxTrustInGroup);
+    const minTrustInGroup = calculateScaledScore(minTrustPerGroup[i]);
+    UI.addTextGroupMark(groupingElem, minTrustInGroup);
   }
   UI.hideLoadingAnimation();
   completionStage = consts.COMPLETION_STAGES.page_processed; // Mark that WikiTrust has finished setup.
-  UI.removeUi();
+  // UI.removeUi();
 };
 
 const setupWikiTrust = () => {
-  injectTooltip();
-  completionStage = consts.COMPLETION_STAGES.ui_injected; // Mark that WikiTrust has injected the uiFrame.
+  // injectTooltip();
+  // completionStage = consts.COMPLETION_STAGES.ui_injected; // Mark that WikiTrust has injected the uiFrame.
   UI.showLoadingAnimation();
   const splitData = runPageSplitter(WIKI_CONTENT_TEXT_ELEMENT);
   console.log('splitData: ', splitData);
-  // fetchScores() // comment out generateFakeScores and uncoment this to use the real python algorithms
-  // const {revId,pageId} =
-  console.log("fetching vars")
-  runFunctionInPageContext(getWikipediaPageMetaData).then((pageMetaData:any)=>{
-    fetchScores(pageMetaData.revId,pageMetaData.pageId).then((serverResponse) => {
-      if (serverResponse.error) {
-        alert("(WILL SHOW FAKE SCORES) server error:" + JSON.stringify(serverResponse));
-        generateFakeScores(splitData.pageWordList).then((serverResponse) => {
-          processScores(serverResponse, splitData);
-        });
-      } else processScores(serverResponse, splitData);
-    }).catch(console.warn);
-  completionStage = consts.COMPLETION_STAGES.api_sent;
-  }); //();
-
+  console.log('Fetching page data');
+  runFunctionInPageContext(getWikipediaPageMetaData).then(
+    (pageMetaData: interfaces.PageMetaData) => {
+      // generateFakeScores(splitData.pageWordList) //  uncoment this and comment out below line to always use fake scores
+      fetchScores(pageMetaData.revId, pageMetaData.pageId)
+        .then((serverResponse) => {
+          if (serverResponse.error) {
+            // If there was an error, show the error message and then show FAKE scores:
+            alert(
+              'server error! (PAGE WILL NOW SHOW FAKE SCORES) error:' +
+                JSON.stringify(serverResponse)
+            );
+            generateFakeScores(splitData.pageWordList).then(
+              (serverResponse) => {
+                processScores(serverResponse, splitData);
+              }
+            );
+            // Otherwise actually process the scores from the server:
+          } else processScores(serverResponse, splitData);
+        })
+        .catch(console.warn);
+      completionStage = consts.COMPLETION_STAGES.api_sent;
+    }
+  );
 };
 
 const handleActivateButtonClick = () => {
   if (completionStage === consts.COMPLETION_STAGES.base_ui_injected) {
     setupWikiTrust();
-  } else alert('TODO: Write Cancel Loading WikiTrust data function');
+  } else if (completionStage !== consts.COMPLETION_STAGES.page_processed) {
+    alert('TODO: Write Cancel Loading / displaying WikiTrust data function');
+  }
+  document.getElementById('WT_Activate_Button').blur();
 };
 
 // ------ Initilization Code (Runs on script injection) -------
@@ -140,10 +180,14 @@ const handleActivateButtonClick = () => {
 if (window.WikiTrustGlobalVars === undefined) {
   window.WikiTrustGlobalVars = {
     completionStage: 0,
+    revisionIndex: 1, // TODO: Hopefully there's some error if this is not updated from the server, if it itsn't "1" will create unexpected display scores.
+    maxWordScore: 1, // TODO: Hopefully there's some error if this is not updated from the server, if it itsn't "1" will create unexpected displayed scores.
     trustVisible: false, // not used
   };
 }
 
+// Set the completionStage from any previous runs of WikiTrust on this current page or session
+// This handles the case where the user tries to run WikiTrust twice on the same page
 let completionStage: consts.COMPLETION_STAGES =
   window.WikiTrustGlobalVars.completionStage;
 
@@ -162,7 +206,10 @@ if (completionStage === consts.COMPLETION_STAGES.just_loaded) {
     completionStage = consts.COMPLETION_STAGES.base_ui_injected; // Mark that WikiTrust has injected the base UI (button & style).
 
     if (envIsBookmarklet() === true) setupWikiTrust();
-  } else alert("WikiTrust can't parse this page yet.");
+  } else
+    alert(
+      "WikiTrust can't parse this page yet - No wikipedia text container found."
+    );
 }
 
 // sources:

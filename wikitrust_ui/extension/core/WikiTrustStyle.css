@@ -1,18 +1,106 @@
-#Wikitrust_UI {
+#Wikitrust_UI_Container {
   position: fixed;
+  z-index: 10;
   bottom: 0;
   left: 0;
 }
 
-#WikiTrustCircleGradient {
+#WT_Gradient_Dial {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+
   height: 48px;
 
-  transition: height 0.3s ease;
-  transform: translateX(-50%);
+  transition: transform 0.2s ease;
+  transform-origin: bottom left;
 
-  border-radius: 2000px 2000px 0 0;
+  border-radius: 0 2000px 0 0;
   box-shadow: 0px 1px 10px rgba(4, 4, 20, 0.39);
 }
+
+#WT_Gradient_Dial_Pointer {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+
+  width: 2px;
+  height: 50px;
+
+  transition: transform 0.1s ease;
+  transform: scale(1);
+  transform-origin: bottom left;
+
+  background: black;
+}
+
+
+#WT_Activate_Button {
+  position: absolute;
+  z-index: 20;
+  bottom: 0;
+  /* background-image: url('data:image/png;base64,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');
+  background-position: bottom left;
+  background-size: 30px; */
+
+  overflow: hidden;
+
+  box-sizing: content-box;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  padding: 8px 8px 0 0;
+
+  cursor: pointer;
+
+  color: white;
+  border: solid 4px #f0491b;
+  border-bottom: none;
+  border-left: none;
+  border-radius: 0 60px 0 0;
+  background-color: rgb(25, 46, 50);
+
+  font-family: serif;
+  font-size: 17px;
+}
+
+#WT_Activate_Button:active {
+  outline: none;
+  background-color: rgb(14, 25, 27) !important;
+}
+#WT_Activate_Button:focus {
+  outline: none;
+}
+
+
+#WT_Activate_Button:active::after {
+  background-color: rgb(14, 25, 27) !important;
+}
+
+#WT_Activate_Button:hover::after,
+#WT_Activate_Button:active::after,
+#WT_Activate_Button:focus::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+
+  padding: 12px;
+
+  content: '✕';
+  /* content: 'ⓘ'; */
+
+  background-color: rgb(25, 46, 50);
+
+  font-size: 16px;
+}
+
+#Wikitrust_UI_Container.showing-score #WT_Gradient_Dial_Pointer, #Wikitrust_UI_Container.showing-score #WT_Gradient_Dial {
+  transform: scale(1.5);
+}
+
+/*
+ * The following styles are for the WikiTrust paragraph level blobs on the side of the wikitext.
+ */
 
 .wt-text-side-group-mark-container.mw-body {
   position: absolute;
@@ -27,7 +115,7 @@
   border: none;
 }
 
-.wt-grouping-container.trust-hidden * {
+.wt-grouping-container.trust-hidden .wt-word-chunk:not(.wt-word-hover) {
   border-bottom-color: transparent !important;
   background-color: transparent !important;
 }
@@ -40,46 +128,6 @@
   height: 20px;
 
   border-radius: 20px;
-}
-
-#WT_Activate_Button:hover ~ #WikiTrustCircleGradient,
-#WikiTrustCircleGradient:hover {
-  height: 68px;
-}
-
-#WT_Activate_Button {
-  position: absolute;
-  z-index: 20;
-  bottom: 0;
-
-  box-sizing: content-box;
-  width: 42px;
-  height: 42px;
-  margin: 0;
-  padding: 8px 8px 0 0;
-
-  cursor: pointer;
-  transition: border-width 0.2s ease;
-
-  color: white;
-  border: solid 2px #f0491b;
-  border-bottom: none;
-  border-left: none;
-  border-radius: 0 60px 0 0;
-  background: rgb(25, 46, 50);
-
-  font-family: 'Georgia';
-  font-size: 16px;
-}
-
-#WT_Activate_Button:active {
-  background-color: rgb(14, 25, 27);
-}
-
-#WT_Activate_Button:focus,
-#WT_Activate_Button:hover {
-  border-width: 4px;
-  outline: none;
 }
 
 /* Centered on line style
@@ -141,7 +189,7 @@
 }
 */
 
-.wt-tooltip {
+/* .wt-tooltip {
   position: absolute;
   z-index: 200;
   top: -5px;
@@ -161,7 +209,7 @@
   box-shadow: 0px 1px 10px rgba(4, 4, 20, 0.39);
 
   font-size: 12px;
-}
+} */
 
 /* .wt-tooltip::after {
   position: absolute;
