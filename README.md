@@ -1,7 +1,28 @@
-### Installing and running the python server:
+# WikiTrust 2.0
+Greetings! You have found version 2 the WikiTrust system and cross-browser Extension.
+The goal of WikiTrust is to compute a trust metric for the text of Wikipedia articles solely based on revison history and accumulated user reputation.
+
+To learn more about the concept, please see our [2.0 Website](https://sites.google.com/view/wikitrust2), [1.0 Website](http://www.wikitrust.net/), and papers published on the WikiTrust [algorithim](/docs/Papers.md)
+
+__As of now, this code is a working MVP:__
+- It can be run locally with a sqlite db, or connected to Google Cloud Services MySQL Instance and Cloud Storage.
+- It is able to fully compute the accuracy of words within Wikipedia pages based on revision history and author experience.
+- Has a functional cross-browser extension, bookmarklet and visualization tool.
+
+__Future Directions__:
+
+This won't happen without a passionate group of developers, if you are interested in taking this project beyond an MVP, please reach out to us!
+- Making this MVP into a scalable solution for processing the whole of Wikipedia.
+- Verifying that the algorithims can support eventual consistancy when processing subsets of the Wikipedia courpus and unseen revisions.
+- Deploying a public server to host WikiTrust 2.0
+
+
+
+
+### Installing and running the python server locally:
 1. run `pip3 install -r requirements.txt` (you might use pip instead of pip3)
 2. run `python3 -m main` to start the processing server (you might use python instead of python3)
-3. Make sure you follow the instructions in [PRIVATE.md](./PRIVATE.md) if you want to be able to read/write to our google cloud instance.
+3. Make sure you follow the instructions in [PRIVATE.md](./PRIVATE.md) if you want to be able to read/write to our google cloud instance as well as setting \_\___enable_gcs__\_\_ in the consts.py file.
 
 ### Installing and running the extension or bookmarklet:
 - See the readme at [wikitrust_ui/extension/README.md](./wikitrust_ui/extension/README.md)
