@@ -11,7 +11,7 @@ googleapis-common-protos==1.52.0
 pydal==20200910.1
 pylint==2.6.0
 requests==2.24.0
-rsa==4.6
+rsa==4.7
 safelog==1.7
 mysql-connector-python==8.0.22
 pywikibot==6.3.0
