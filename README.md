@@ -1,6 +1,7 @@
 ### Installing and running the python server:
 1. run `pip3 install -r requirements.txt` (you might use pip instead of pip3)
 2. run `python3 -m main` to start the processing server (you might use python instead of python3)
+3. Make sure you follow the instructions in [PRIVATE.md](./PRIVATE.md) if you want to be able to read/write to our google cloud instance.
 
 ### Installing and running the extension or bookmarklet:
 - See the readme at [wikitrust_ui/extension/README.md](./wikitrust_ui/extension/README.md)

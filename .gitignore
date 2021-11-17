@@ -1,5 +1,6 @@
 *.pyc
 Test.db
+local_gcs/
 
 # --- PyWikiBot -----
 throttle.ctrl

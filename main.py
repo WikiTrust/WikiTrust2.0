@@ -2,41 +2,44 @@ from datetime import datetime
 import sys
 
 # constants used in the program
-import wikitrust.consts as consts
+import wikitrust_py.consts as consts
 
 # for database
-from wikitrust.database import db_schema
+from wikitrust_py.database import db_schema
 
 # for testing?
-# import wikitrust.test.db_test as db_test
-# import wikitrust.test.computation_engine_debug as ce_test
-# import wikitrust.test.storage_engine_debug as storage_test
-# import wikitrust.test.fill_storage_engine as storage_fill
+# import wikitrust_py.test.db_test as db_test
+# import wikitrust_py.test.computation_engine_debug as ce_test
+# import wikitrust_py.test.storage_engine_debug as storage_test
+# import wikitrust_py.test.fill_storage_engine as storage_fill
 
 # For storage engine
-from wikitrust.database.controllers.storage_engine_db_controller import storage_engine_db_controller
-from wikitrust.storage_engine.storage_engine import RevisionStorageEngine
-from wikitrust.storage_engine.storage_engine import TextTrustStorageEngine
+from wikitrust_py.database.controllers.storage_engine_db_controller import storage_engine_db_controller
+from wikitrust_py.storage_engine.storage_engine import RevisionStorageEngine
+from wikitrust_py.storage_engine.storage_engine import TextTrustStorageEngine
 
 # controllers
-from wikitrust.main_backend_controller import main_backend_controller
-from wikitrust.main_frontend_controller import main_frontend_controller
+from wikitrust_py.main_backend_controller import main_backend_controller
+from wikitrust_py.main_frontend_controller import main_frontend_controller
 
 if __name__ == '__main__':
 
     # Connect to database:
     db = db_schema.connect_to_db(consts.__DBURI__)
 
-    #initialize storage engines
+    #initialize db controller for storage engines
     storage_db_ctrl = storage_engine_db_controller(db)
     # storage_db_ctrl.print_storage_table() # < for debugging
+
+    # initialize storage engines
+    # NOTE: I last set __USE_GCS__ in consts.py to False, so the storage engines will save to local files instead of using Google Cloud Storage, you can change this to True to use GCS
     revStore = RevisionStorageEngine(
-        bucket_name=consts.__STORAGE_BUCKET_NAME__,
+        bucket_name=consts.__GCS_BUCKET_NAME__,
         storage_db_ctrl=storage_db_ctrl,
         version=consts.__ALGORITHM_VER__
     )
     textTrustStore = TextTrustStorageEngine(
-        bucket_name=consts.__STORAGE_BUCKET_NAME__,
+        bucket_name=consts.__GCS_BUCKET_NAME__,
         storage_db_ctrl=storage_db_ctrl,
         version=consts.__ALGORITHM_VER__
     )
