@@ -25,7 +25,7 @@ class storage_engine_db_controller:
             & (rev_id == self.storage_table.rev_id) & (text_type == self.storage_table.text_type)
         blob_list = self.db(query).select(self.storage_table.blob)
         if blob_list != None and len(blob_list) > 0:
-            return blob_list[0]
+            return blob_list[0].blob
         return None
 
     def count_revisions_in_blob(self, blob_name: str, text_type: str):

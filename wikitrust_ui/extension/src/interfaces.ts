@@ -2,8 +2,9 @@ interface WikiTrustGlobalVars {
   completionStage: number;
   trustVisible: boolean;
   revisionIndex: number;
+  maxWordScore: number;
   styleElm?: HTMLElement;
-  uiFrameContainer?: HTMLElement; // not used anymore
+  uiFrameContainer?: HTMLElement; // yes used?
 }
 
 declare global {

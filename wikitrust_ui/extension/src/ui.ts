@@ -69,14 +69,15 @@ const buildMarkContainer = () => {
 /* shows the gradient dial, sets the position dial pointer to the correct position on the gradient dial and sets the color scheme to match. */
 export const showTrustScore = (score: number) => {
   window.WikiTrustGlobalVars.uiFrameContainer!.classList.add('showing-score');
-  activateWTButton.innerText = (score * 100).toFixed(1);
-  activateWTButton.style.borderColor = getColorForPercentage(1 - score, 1);
-  WTDialPointer.style.transform = `rotate(${(1 - score) * 90}deg)`;
+  activateWTButton.innerText = score.toFixed(1); // (score * 100).toFixed(1);
+  activateWTButton.style.borderColor = getColorForPercentage(score, 1);
+  WTDialPointer.style.transform = `scale(1.5) rotate(${(1 - score) * 90}deg)`;
 };
 export const hideTrustScore = () => {
   window.WikiTrustGlobalVars.uiFrameContainer!.classList.remove(
     'showing-score'
   );
+  WTDialPointer.style.transform = `scale(1)`;
   activateWTButton.innerHTML = 'W<sub>T</sub>';
 };
 

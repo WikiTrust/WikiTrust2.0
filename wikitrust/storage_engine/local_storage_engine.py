@@ -1,9 +1,12 @@
 import datetime
 import json
 
+# NOTE: This was used for early testing, it does not have the full api of the real storage engine, it only loads into memory from json files .
+
+
 class LocalStorageEngine(object):
     """
-    A dummy implementation of the StorageEngine that is purely local. 
+    A dummy implementation of the StorageEngine that is purely local.
     Can be initialized with a JSON using the functions below.
     """
     def __init__(self, db, num_objects_per_blob=10, database_table=None,
@@ -64,7 +67,7 @@ def load_page_json_into_storage(storage_engine, input_json):
         storage_engine.store("DUMMY_VERSION", page_id, rev_id, json.dumps(rev_text.split()), datetime.datetime.now())
 
 if __name__ == '__main__':
-    """ 
+    """
     An example of how to load in a Page JSON (In the format that Luke's revision puller gives)
     """
     dummy_storage_engine = LocalStorageEngine(db = None)

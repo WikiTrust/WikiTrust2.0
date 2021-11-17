@@ -81,8 +81,7 @@ const processScores = (
   splitData: any // TODO: ------------------- ACTUAL TYPE
 ) => {
   console.log('Server Response: ', serverResponse);
-  // The revsiionIndex must be set before calculating the scores, as it is used to normalize the scores
-  window.WikiTrustGlobalVars.revisionIndex = serverResponse.revisionIndex;
+
   // mark that the server has responded
   completionStage = consts.COMPLETION_STAGES.api_recived;
   const mapping = getWordMatchMapping(
@@ -90,25 +89,40 @@ const processScores = (
     splitData.pageWordList
   );
   console.groupCollapsed('==== Wiki Page to Server Word Mappings ====');
-  console.log('Format: "Word on page" "mapped word from server word list" | index of page word->index of mapped server word ')
+  console.log(
+    'Format: "Word on page" "mapped word from server word list" | index of page word->index of mapped server word '
+  );
   const mappedScores = new Array(mapping.length);
   for (let index = 0; index < mapping.length; index++) {
     const mappedWord = serverResponse.words[mapping[index]] || '';
     const mappedScore = serverResponse.scores[mapping[index]] || -1;
     mappedScores[index] = mappedScore;
-    console.log('%c"'+
-      splitData.pageWordList[index] +
-     '" "' + mappedWord + '" | ' + index + '->' + mapping[index],
-     //apply color / style based on mapping alignment
-      'color: #0000' + (splitData.pageWordList[index] == mappedWord ? '00': 'ff') + '; font-weight: ' + (index != mapping[index] ? "bold": "normal") + ';'
+    console.log(
+      '%c"' +
+        splitData.pageWordList[index] +
+        '" "' +
+        mappedWord +
+        '" | ' +
+        index +
+        '->' +
+        mapping[index],
+      //apply color / style based on mapping alignment
+      'color: #0000' +
+        (splitData.pageWordList[index] == mappedWord ? '00' : 'ff') +
+        '; font-weight: ' +
+        (index != mapping[index] ? 'bold' : 'normal') +
+        ';'
     );
   }
   console.groupEnd();
 
+  // The revsiionIndex and maxWordScore must be set before displaying the scores, as it is used to normalize them to a 0-1 scale
+  window.WikiTrustGlobalVars.revisionIndex = serverResponse.revisionIndex;
+  window.WikiTrustGlobalVars.maxWordScore = findMax(mappedScores);
+
   const minTrustPerGroup = applyWordScores(
     splitData.textNodesPerGroup,
-    mappedScores,
-    findMin(mappedScores)
+    mappedScores
   );
   for (let i = 0, len = splitData.groupingElems.length; i < len; i++) {
     const groupingElem = splitData.groupingElems[i];
@@ -155,7 +169,10 @@ const setupWikiTrust = () => {
 const handleActivateButtonClick = () => {
   if (completionStage === consts.COMPLETION_STAGES.base_ui_injected) {
     setupWikiTrust();
-  } else alert('TODO: Write Cancel Loading WikiTrust data function');
+  } else if (completionStage !== consts.COMPLETION_STAGES.page_processed) {
+    alert('TODO: Write Cancel Loading / displaying WikiTrust data function');
+  }
+  document.getElementById('WT_Activate_Button').blur();
 };
 
 // ------ Initilization Code (Runs on script injection) -------
@@ -163,7 +180,8 @@ const handleActivateButtonClick = () => {
 if (window.WikiTrustGlobalVars === undefined) {
   window.WikiTrustGlobalVars = {
     completionStage: 0,
-    revisionIndex: 1, // TODO: Hopefully there's some error if this is not updated from the server, if it itsn't "1" will create valid, but unexpected scores.
+    revisionIndex: 1, // TODO: Hopefully there's some error if this is not updated from the server, if it itsn't "1" will create unexpected display scores.
+    maxWordScore: 1, // TODO: Hopefully there's some error if this is not updated from the server, if it itsn't "1" will create unexpected displayed scores.
     trustVisible: false, // not used
   };
 }

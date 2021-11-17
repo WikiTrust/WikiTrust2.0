@@ -12,7 +12,7 @@
 
   height: 48px;
 
-  transition: height 0.3s ease;
+  transition: transform 0.2s ease;
   transform-origin: bottom left;
 
   border-radius: 0 2000px 0 0;
@@ -28,19 +28,12 @@
   height: 50px;
 
   transition: transform 0.1s ease;
+  transform: scale(1);
   transform-origin: bottom left;
 
   background: black;
 }
 
-/* #WT_Activate_Button:hover ~ #WT_Gradient_Dial,
-#WT_Gradient_Dial:hover {
-  height: 68px;
-}
-*/
-#WT_Activate_Button:hover ~ #WT_Gradient_Dial_Pointer {
-  transform: rotate(60deg);
-}
 
 #WT_Activate_Button {
   position: absolute;
@@ -59,11 +52,9 @@
   padding: 8px 8px 0 0;
 
   cursor: pointer;
-  transition: border-width 0.2s ease;
-  transform-origin: bottom left;
 
   color: white;
-  border: solid 2px #f0491b;
+  border: solid 4px #f0491b;
   border-bottom: none;
   border-left: none;
   border-radius: 0 60px 0 0;
@@ -74,12 +65,10 @@
 }
 
 #WT_Activate_Button:active {
-  border-width: 4px;
   outline: none;
   background-color: rgb(14, 25, 27) !important;
 }
 #WT_Activate_Button:focus {
-  border-width: 4px;
   outline: none;
 }
 
@@ -105,10 +94,8 @@
   font-size: 16px;
 }
 
-#Wikitrust_UI_Container.showing-score #WT_Activate_Button {
-  transform: scale(0.7);
-
-
+#Wikitrust_UI_Container.showing-score #WT_Gradient_Dial_Pointer, #Wikitrust_UI_Container.showing-score #WT_Gradient_Dial {
+  transform: scale(1.5);
 }
 
 /*
@@ -128,7 +115,7 @@
   border: none;
 }
 
-.wt-grouping-container.trust-hidden * {
+.wt-grouping-container.trust-hidden .wt-word-chunk:not(.wt-word-hover) {
   border-bottom-color: transparent !important;
   background-color: transparent !important;
 }

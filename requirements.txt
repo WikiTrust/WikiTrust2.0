@@ -15,4 +15,4 @@ rsa==4.6
 safelog==1.7
 mysql-connector-python==8.0.22
 pywikibot==6.3.0
-mwparserfromhell==0.6.2
+wikitextparser==0.47.7

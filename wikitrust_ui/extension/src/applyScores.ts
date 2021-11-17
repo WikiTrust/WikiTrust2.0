@@ -2,19 +2,35 @@ import * as interfaces from './interfaces';
 import * as UI from './ui';
 // import { showTooltipAtElement } from './tooltip'; // not needed anymore, score is shown in corner
 
+/**
+ * normalizes the score to be between 0 and 1
+ * @note This function REQUIRES that the maxWordScore and revisionIndex
+ *       are set in window.WikiTrustGlobalVars before calling this function.
+ * @param {number} score - The raw score (from the algorithim output) to be normalized
+ * @returns {number} The normalized score
+ */
 export const calculateScaledScore = (score: number) => {
-  var x = score / window.WikiTrustGlobalVars.revisionIndex;
+  // var max = window.WikiTrustGlobalVars.maxWordScore;
+  var x = window.WikiTrustGlobalVars.revisionIndex;
   var Y = 1 / (1 + Math.exp(4.5 - 9 * x)); // sigmoid function https://www.desmos.com/calculator/ksmz4tnvyc
-  return Y;
+  return score / window.WikiTrustGlobalVars.maxWordScore;
 };
 
 /**
  * Returns true if the character code is a whitespace character.
- * @param {Node} code - The char code you want to test
+ * @param {number} code - The char code you want to test
  */
 const charCodeIsWhitespace = (code: number) => {
   return (code <= 32 && code >= 0) || code === 127;
 };
+
+// Hard coded color gradient used in below getColorForPercentage() function
+const percentColorsGradient: interfaces.GradientStop[] = [
+  // Define a gradient (percent = 0.0 - least trustworthy color, percent = 1.0 - most trustworthy color)
+  { percent: 0.0, color: { r: 0xfc, g: 0x4a, b: 0x1a } }, // #fc4a1a
+  { percent: 0.5, color: { r: 0xf7, g: 0xb7, b: 0x33 } }, // #f7b733
+  { percent: 1.0, color: { r: 0xff, g: 0xff, b: 0xff } }, // white
+];
 
 /**
  * @return an 'rgba(255,255,255,1)' formated color string based on a percent through a hard-coded gradient and an opacity.
@@ -23,12 +39,6 @@ const charCodeIsWhitespace = (code: number) => {
  */
 export const getColorForPercentage = (percent: number, opacity: number) => {
   // Source: https://stackoverflow.com/questions/7128675/from-green-to-red-color-depend-on-percentage
-  const percentColorsGradient: interfaces.GradientStop[] = [
-    // Define a gradient (0 = least trustworthy color, 1 = most trustworthy color)
-    { percent: 0.0, color: { r: 0xff, g: 0xff, b: 0xff } }, // white
-    { percent: 0.5, color: { r: 0xf7, g: 0xb7, b: 0x33 } }, // #f7b733
-    { percent: 1.0, color: { r: 0xfc, g: 0x4a, b: 0x1a } }, // #fc4a1a
-  ];
   let i = 1;
   for (i = 1; i < percentColorsGradient.length - 1; i++) {
     if (percent < percentColorsGradient[i].percent) {
@@ -64,12 +74,16 @@ const insertWordChunk = (textNode: Node, wordChunk: string, score: number) => {
   wordChunkElement.textContent = wordChunk;
   wordChunkElement.className = 'wt-word-chunk';
   wordChunkElement.setAttribute('trust', score.toString()); // for debug
+  // after showing the real score, we can calculate the scaled score
+
   score = calculateScaledScore(score);
   wordChunkElement.onmouseenter = (e) => {
     UI.showTrustScore(score);
+    wordChunkElement.classList.add('wt-word-hover');
   };
   wordChunkElement.onmouseleave = (e) => {
     UI.hideTrustScore();
+    wordChunkElement.classList.remove('wt-word-hover');
   };
   if (score <= 1 && score !== 0) {
     // if the word has a score applied
@@ -77,9 +91,9 @@ const insertWordChunk = (textNode: Node, wordChunk: string, score: number) => {
       score,
       1
     )}`;
-    wordChunkElement.style.color = `green`;
+    // wordChunkElement.style.color = `green`;
     wordChunkElement.style.backgroundColor = getColorForPercentage(score, 0.1);
-  } else wordChunkElement.style.borderBottom = `2px solid lightgrey`; // if the wordChunk was not matched to the algorithim's output, highlight blue
+  } else wordChunkElement.style.borderBottom = `2px solid lightgrey`; // if the wordChunk was not matched to the algorithim's output, highlight with grey
   parentElement.insertBefore(wordChunkElement, textNode);
 };
 
@@ -92,19 +106,18 @@ const insertWordChunk = (textNode: Node, wordChunk: string, score: number) => {
  */
 export const applyWordScores = (
   textNodesPerGroup: Node[][],
-  wordScores: number[],
-  minWordScore: number
+  wordScores: number[]
 ) => {
   const minTrustPerGroup: number[] = [];
   let currWordIndex = 0;
   let lastCharWasWhitespace = false;
   for (let gi = 0, len = textNodesPerGroup.length; gi < len; gi++) {
-    let minTrustInThisGroup = 0;
+    let minTrustInThisGroup = Infinity;
     for (let ti = 0, len = textNodesPerGroup[gi].length; ti < len; ti++) {
       const textNode = textNodesPerGroup[gi][ti];
       const nodeText = textNode.nodeValue || '';
       let wordChunkStartIndex = 0;
-      let scaledScore = wordScores[currWordIndex] / minWordScore;
+      let wordScore = wordScores[currWordIndex];
       const len = nodeText.length;
       let allCharsAreWhitespace = true;
       // loop through every character in this text node finding words.
@@ -115,12 +128,12 @@ export const applyWordScores = (
         if (!currCharIsWhitespace && lastCharWasWhitespace) {
           allCharsAreWhitespace = false;
           if (wordScores[currWordIndex] !== wordScores[currWordIndex + 1]) {
-            if (scaledScore < minTrustInThisGroup)
-              minTrustInThisGroup = scaledScore;
+            if (wordScore < minTrustInThisGroup)
+              minTrustInThisGroup = wordScore;
             insertWordChunk(
               textNode,
               nodeText.substring(wordChunkStartIndex, charindex),
-              scaledScore
+              wordScore
             );
             wordChunkStartIndex = charindex;
           }
@@ -133,19 +146,19 @@ export const applyWordScores = (
           insertWordChunk(
             textNode,
             nodeText.substring(wordChunkStartIndex, len),
-            scaledScore
+            wordScore
           );
-          if (scaledScore < minTrustInThisGroup)
-            minTrustInThisGroup = scaledScore;
+          if (wordScore < minTrustInThisGroup)
+            minTrustInThisGroup = wordScore;
         }
       } else if (!charCodeIsWhitespace(nodeText.charCodeAt(0))) {
-        insertWordChunk(textNode, nodeText.substring(0, len), scaledScore);
-        if (scaledScore < minTrustInThisGroup)
-          minTrustInThisGroup = scaledScore;
+        insertWordChunk(textNode, nodeText.substring(0, len), wordScore);
+        if (wordScore < minTrustInThisGroup)
+          minTrustInThisGroup = wordScore;
       } else if (allCharsAreWhitespace) {
         insertWordChunk(textNode, nodeText.substring(0, len), 0);
       }
-      // textNode.parentNode?.removeChild(textNode);
+      textNode.parentNode?.removeChild(textNode);
     }
     minTrustPerGroup.push(minTrustInThisGroup);
   }
