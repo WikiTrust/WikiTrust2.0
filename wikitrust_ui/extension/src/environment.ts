@@ -55,7 +55,10 @@ export const runFunctionInPageContext = (fn: Function) => {
   // Note: this promise is of type interfaces.PageMetaData purely because that's the only type we use it with, you'll need to refactor this to use multiple types.
   return new Promise<interfaces.PageMetaData>((resolve, reject) => {
     if (envIsBookmarklet()) resolve(fn());
-    else if (ENVIRONMENT === consts.ENVIRONMENTS.chrome_extension) {
+    else if (
+      ENVIRONMENT === consts.ENVIRONMENTS.chrome_extension ||
+      ENVIRONMENT === consts.ENVIRONMENTS.firefox_extension
+    ) {
       if (runFunctionInPageContext_lock == true) {
         alert(
           'Uh Oh runFunctionInPageContext() called again before the last execution of it could finish!'

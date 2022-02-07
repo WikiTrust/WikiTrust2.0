@@ -3,6 +3,8 @@
   z-index: 10;
   bottom: 0;
   left: 0;
+
+  transform: scale(1.5);
 }
 
 #WT_Gradient_Dial {
@@ -116,18 +118,25 @@
 }
 
 .wt-grouping-container.trust-hidden .wt-word-chunk:not(.wt-word-hover) {
+  /* border-bottom-color: transparent !important;
+  background-color: transparent !important; */
+}
+
+.wt-grouping-container.trust-hidden-d .wt-word-chunk:not(.wt-word-hover){
   border-bottom-color: transparent !important;
   background-color: transparent !important;
 }
 
 .wt-text-side-group-mark {
   position: absolute;
-  left: -10px;
+  left: -7px;
 
-  width: 20px;
+  width: 14px;
   height: 20px;
 
   border-radius: 20px;
+  background: white;
+  box-shadow: 1px 1px 5px 0px #00000033;
 }
 
 /* Centered on line style

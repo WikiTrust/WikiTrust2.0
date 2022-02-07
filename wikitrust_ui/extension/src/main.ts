@@ -143,6 +143,7 @@ const setupWikiTrust = () => {
   console.log('Fetching page data');
   runFunctionInPageContext(getWikipediaPageMetaData).then(
     (pageMetaData: interfaces.PageMetaData) => {
+      console.log('Wikipedia Page Meta Data: ', pageMetaData);
       // generateFakeScores(splitData.pageWordList) //  uncoment this and comment out below line to always use fake scores
       fetchScores(pageMetaData.revId, pageMetaData.pageId)
         .then((serverResponse) => {
