@@ -1030,7 +1030,7 @@ exports.__esModule = true;
  * @returns a promise which resolves with the parsed JSON returned by the API
  *  */
 
-var url_base = 'https://2531-63-249-68-2.ngrok.io'; //'http://localhost:8000';
+var url_base = 'http://b3c4-63-249-68-2.ngrok.io'; //'http://localhost:8000';
 
 exports.fetchScores = function (revisionId, pageId) {
   // RIGHT NOW We're using revisionId assuming it's unique across all pages. if not, pageId will need to be sent too.
@@ -1293,7 +1293,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50785" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52426" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
