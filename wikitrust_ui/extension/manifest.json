@@ -13,7 +13,8 @@
 
   "permissions": [
     "http://*.wikipedia.org/wiki/*",
-    "https://*.wikipedia.org/wiki/*"
+    "https://*.wikipedia.org/wiki/*",
+    "http://localhost/*"
   ],
 
   "web_accessible_resources": [
