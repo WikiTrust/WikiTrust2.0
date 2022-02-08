@@ -2,7 +2,9 @@
 Greetings! You have found version 2 the WikiTrust system and cross-browser Extension.
 The goal of WikiTrust is to compute a trust metric for the text of Wikipedia articles solely based on revison history and accumulated user reputation.
 
-To learn more about the concept, please see our [2.0 Website](https://sites.google.com/view/wikitrust2), [1.0 Website](http://www.wikitrust.net/), and papers published on the WikiTrust [algorithim](/docs/Papers.md)
+![Extension Screenshot](./docs/WT_Browser_Screenshot.png)
+
+To learn more about the concept please see our [2.0 Website](https://sites.google.com/view/wikitrust2), [1.0 Website](http://www.wikitrust.net/), and papers published on the WikiTrust [algorithim](/docs/Papers.md)
 
 __As of now, this code is a working MVP:__
 - It can be run locally with a sqlite db, or connected to Google Cloud Services MySQL Instance and Cloud Storage.
@@ -11,7 +13,7 @@ __As of now, this code is a working MVP:__
 
 __Future Directions__:
 
-This won't happen without a passionate group of developers, if you are interested in taking this project beyond an MVP, please reach out to us!
+This won't happen without a passionate group of developers, if you are interested in taking this project beyond an MVP, please reach out to us by making an issue on Github!
 - Making this MVP into a scalable solution for processing the whole of Wikipedia.
 - Verifying that the algorithims can support eventual consistancy when processing subsets of the Wikipedia courpus and unseen revisions.
 - Deploying a public server to host WikiTrust 2.0
