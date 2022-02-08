@@ -57,7 +57,9 @@ const generateFakeScores = (word_list: string[]) => {
       } else {
         output.words.push(word_list[i]); // otherwise use the actual word
       }
-      output.scores.push(Math.sin(i * 0.04));
+      output.scores.push(
+        randomNumber * Math.sin(i * 0.0004) > 5 ? Math.sin(i * 0.0004) : 1
+      );
     }
     resolve(output);
   });
@@ -144,7 +146,7 @@ const setupWikiTrust = () => {
   runFunctionInPageContext(getWikipediaPageMetaData).then(
     (pageMetaData: interfaces.PageMetaData) => {
       console.log('Wikipedia Page Meta Data: ', pageMetaData);
-      // generateFakeScores(splitData.pageWordList) //  uncoment this and comment out below line to always use fake scores
+      //generateFakeScores(splitData.pageWordList) //  uncoment this and comment out below line to always use fake scores
       fetchScores(pageMetaData.revId, pageMetaData.pageId)
         .then((serverResponse) => {
           if (serverResponse.error) {

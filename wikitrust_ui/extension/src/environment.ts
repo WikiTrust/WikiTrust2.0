@@ -40,7 +40,7 @@ export const getAsset = (relativePath: string) => {
   // For the extension ENVIRONMENT use the path from the extension, otherwise use the same asset hosted on the web:
   if (envIsBookmarklet()) {
     return (
-      'https://combinatronics.com/WikiTrust/WikiTrust2.0/master/wikitrust_ui/extension' +
+      'https://combinatronics.com/WikiTrust/WikiTrust2.0/develop/wikitrust_ui/extension/' +
       relativePath
     );
   } else return extensionSpecificAPIs.getURL(relativePath);

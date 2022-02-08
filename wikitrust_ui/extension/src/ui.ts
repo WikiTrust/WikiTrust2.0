@@ -135,6 +135,8 @@ export const showLoadingAnimation = () => {
 export const hideLoadingAnimation = () => {
   if (loadingAnimIntervalId === -1) return;
   clearInterval(loadingAnimIntervalId);
+  activateWTButton.innerHTML = 'W<sub>T</sub>';
+  activateWTButton.classList.add('wt-active');
 };
 
 /** Stops the askii loading animation in the activate WikiTrust button */

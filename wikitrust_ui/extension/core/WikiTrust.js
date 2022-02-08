@@ -1030,7 +1030,7 @@ exports.__esModule = true;
  * @returns a promise which resolves with the parsed JSON returned by the API
  *  */
 
-var url_base = 'http://b3c4-63-249-68-2.ngrok.io'; //'http://localhost:8000';
+var url_base = 'http://localhost:8000';
 
 exports.fetchScores = function (revisionId, pageId) {
   // RIGHT NOW We're using revisionId assuming it's unique across all pages. if not, pageId will need to be sent too.
@@ -1038,21 +1038,19 @@ exports.fetchScores = function (revisionId, pageId) {
     fetch(url_base + '/api?action=get_revision_text_trust&revision_id=' + revisionId).then(function (response) {
       return response.json();
     }).then(function (data) {
-      setTimeout(function () {
-        console.log('Got revision (' + revisionId + ') text trust from server: ', data);
+      console.log('Got revision (' + revisionId + ') text trust from server: ', data);
 
-        if (data['error']) {
-          console.warn('Server Error: ' + data['error']);
-          reject('Server Error: ' + data['error']);
-        }
+      if (data['error']) {
+        console.warn('Server Error: ' + data['error']);
+        reject('Server Error: ' + data['error']);
+      }
 
-        var output = {
-          words: data.words,
-          scores: data.trust_values,
-          revisionIndex: data.revision_index
-        };
-        resolve(output);
-      }, 1200); // for testing
+      var output = {
+        words: data.words,
+        scores: data.trust_values,
+        revisionIndex: data.revision_index
+      };
+      resolve(output);
     })["catch"](function (error) {
       alert('Error Fetching: ' + error);
       url_base = prompt('If you have the wt server running at a known IP address please enter that here eg: "http://192.168.0.10:8000"') || url_base;
