@@ -46,7 +46,15 @@ class PageProcessor:
         :param wikiText: A string containing WikiText
         :return: A string of the parsed text without any markup or code
         """
-        parsed = wtp.parse(wikiText).plain_text(unescape_html_entities=False)
+        try:
+            parsed = wtp.parse(wikiText).plain_text(
+                unescape_html_entities=False
+            )
+        except Exception as e:
+            print("Text Type:")
+            print(type(wikiText))
+            print(wikiText)
+            raise e
         return parsed
 
     def getLeadSection(self, page: pywikibot.page.Page):
