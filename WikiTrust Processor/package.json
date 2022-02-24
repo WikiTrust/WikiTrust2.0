@@ -1,0 +1,47 @@
+{
+  "name": "wikitrust-extension",
+  "version": "1.0.0",
+  "description": "helloooooooo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WikiTrust/WikiTrust2.0.git"
+  },
+  "keywords": [
+    "wikipedia",
+    "trust",
+    "author",
+    "revision"
+  ],
+  "author": "Wikitrust 2 Authors",
+  "license": "TODOOOOOOO",
+  "bugs": {
+    "url": "https://github.com/WikiTrust/WikiTrust2.0/issues"
+  },
+  "homepage": "https://github.com/WikiTrust/WikiTrust2.0#readme",
+  "dependencies": {
+    "cargo": "^0.8.0",
+    "regenerator-runtime": "^0.13.5",
+    "test": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.91",
+    "@types/firefox-webext-browser": "^70.0.1",
+    "@types/node": "^10.0.3",
+    "gts": "^1.1.2",
+    "parcel-bundler": "^1.12.4",
+    "parcel-plugin-wasm.rs": "^1.2.15",
+    "typescript": "~3.7.0"
+  },
+  "scripts": {
+    "all": "npm run clean && npm run build",
+    "prod_build": "npx parcel build ./src/index.ts --out-dir ./core --out-file ./WikiTrust.js",
+    "auto_build": "npx parcel ./src/index.ts --out-dir ./core --out-file ./WikiTrust.js",
+    "check": "gts check",
+    "clean": "gts clean",
+    "compile": "tsc -p .",
+    "fix": "gts fix",
+    "rust_test": "cargo test && wasm-pack test --headless",
+    "auto_build_frame": "npm run transpile_python;npx parcel ./frameTest.html --out-dir ./dist",
+    "transpile_python": "cd src/Python/;python3 -m transcrypt -b -m -n demo.py;cd ../../"
+  }
+}

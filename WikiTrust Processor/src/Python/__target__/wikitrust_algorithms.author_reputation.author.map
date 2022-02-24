@@ -1,0 +1,8 @@
+{
+	"version": 3,
+	"file": "wikitrust_algorithms.author_reputation.author.js",
+	"sources": [
+		"wikitrust_algorithms.author_reputation.author.py"
+	],
+	"mappings": "AAAA;AAsDA;AAtDA;AAMA;AAAA;AAOA;AAOA;AAIA;AACA;AAAA;AAEA;AAIA;AAAA;AAEA;AAIA;AAAA;AAEA;AAIA;AAAA;AAEA;AAMA;AACA;AAAA;AAEA;AAAA;AAAA;AAAA"
+}
